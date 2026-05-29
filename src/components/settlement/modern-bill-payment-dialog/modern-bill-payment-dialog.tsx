@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AnimatePresence } from "motion/react";
@@ -15,8 +15,10 @@ import {
 import type { Counterparty } from "@/lib/settlement/schema";
 import {
   cents,
+  isCounterpartyHidden,
   selectAvailableCounterparties,
   selectAvailableRails,
+  selectManageableCounterparties,
   selectResolvedDependencies,
   useSettlementStore,
 } from "@/lib/settlement/store";
@@ -25,7 +27,12 @@ import { AddRecipientStep } from "./add-recipient-step";
 import { AmountStep } from "./amount-step";
 import { ConfirmStep } from "./confirm-step";
 import {
-  addRecipientInputSchema,
+  addRecipientErrorsAreEmpty,
+  normalizeAddRecipientForm,
+  validateAddRecipientForm,
+} from "./add-recipient-validation";
+import {
+  BILL_PAYMENT_DEFAULT_MEMO,
   DEFAULT_ADD_RECIPIENT_SECTIONS,
   EMPTY_ADD_RECIPIENT_FORM,
 } from "./constants";
@@ -45,14 +52,16 @@ import {
 } from "./styles";
 import type {
   AddRecipientErrors,
-  AddRecipientFieldKey,
   AddRecipientReturnStep,
-  BankAccountFormField,
   ModernStep,
   PaymentTime,
 } from "./types";
 
-export function ModernBillPaymentDialog() {
+export type ModernBillPaymentDialogProps = {
+  trigger?: ReactNode;
+};
+
+export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<ModernStep>("amount");
   const [time, setTime] = useState<PaymentTime>("instant");
@@ -65,11 +74,15 @@ export function ModernBillPaymentDialog() {
   const [editingRecipientId, setEditingRecipientId] = useState<string | null>(null);
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
   const [amountInput, setAmountInput] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   const state = useSettlementStore();
   const recipients = selectAvailableCounterparties(state);
-  const hasRecipients = recipients.length > 0;
+  const manageableRecipients = selectManageableCounterparties(state);
+  const hasVisibleRecipients = recipients.length > 0;
+  const allRecipientsHidden =
+    manageableRecipients.length > 0 && recipients.length === 0;
   const fundingSources = selectAvailableRails(state);
   const { counterparty, rail } = selectResolvedDependencies(state);
   const available = rail?.availableCents ?? 0;
@@ -109,38 +122,9 @@ export function ModernBillPaymentDialog() {
   }
 
   function confirmSaveRecipient() {
-    const parsed = addRecipientInputSchema.safeParse({
-      displayName: addRecipientForm.displayName.trim(),
-      type: addRecipientForm.type,
-      network: addRecipientForm.network,
-      externalRef: addRecipientForm.externalRef.trim(),
-      bankAccount: {
-        bankName: addRecipientForm.bankAccount.bankName.trim(),
-        routingNumber: addRecipientForm.bankAccount.routingNumber.trim(),
-        accountNumber: addRecipientForm.bankAccount.accountNumber.trim(),
-        accountType: addRecipientForm.bankAccount.accountType,
-      },
-    });
+    const nextErrors = validateAddRecipientForm(addRecipientForm);
 
-    if (!parsed.success) {
-      const nextErrors: AddRecipientErrors = {};
-      for (const issue of parsed.error.issues) {
-        const [root, nested] = issue.path;
-        if (root === "bankAccount" && typeof nested === "string") {
-          const field = nested as BankAccountFormField;
-          nextErrors.bankAccount ??= {};
-          if (!nextErrors.bankAccount[field]) {
-            nextErrors.bankAccount[field] = issue.message;
-          }
-          continue;
-        }
-        if (typeof root === "string" && root !== "bankAccount") {
-          const field = root as AddRecipientFieldKey;
-          if (!nextErrors[field]) {
-            nextErrors[field] = issue.message;
-          }
-        }
-      }
+    if (!addRecipientErrorsAreEmpty(nextErrors)) {
       setAddRecipientErrors(nextErrors);
       setAddRecipientSections((current) => ({
         vendor: current.vendor || vendorSectionHasError(nextErrors),
@@ -153,12 +137,13 @@ export function ModernBillPaymentDialog() {
       return;
     }
 
-    const savedName = parsed.data.displayName;
+    const parsed = normalizeAddRecipientForm(addRecipientForm);
+    const savedName = parsed.displayName;
     if (editingRecipientId) {
-      state.updateCounterparty(editingRecipientId, parsed.data);
+      state.updateCounterparty(editingRecipientId, parsed);
       toast.success("Recipient updated", { description: savedName });
     } else {
-      state.addCounterparty(parsed.data);
+      state.addCounterparty(parsed);
       toast.success("Recipient added", { description: savedName });
     }
     setAddRecipientForm(EMPTY_ADD_RECIPIENT_FORM);
@@ -169,7 +154,7 @@ export function ModernBillPaymentDialog() {
   }
 
   function confirmRemoveRecipient(id: string) {
-    const removed = recipients.find((recipient) => recipient.id === id);
+    const removed = manageableRecipients.find((recipient) => recipient.id === id);
     state.removeCounterparty(id);
     setPendingRemoveId(null);
     toast.success("Recipient removed", {
@@ -177,9 +162,27 @@ export function ModernBillPaymentDialog() {
     });
   }
 
+  function toggleRecipientVisibility(recipient: Counterparty) {
+    const hidden = isCounterpartyHidden(state, recipient.id);
+    if (hidden) {
+      state.showCounterparty(recipient.id);
+      toast.success("Recipient shown", { description: recipient.displayName });
+      return;
+    }
+    state.hideCounterparty(recipient.id);
+    toast.success("Recipient hidden", {
+      description: `${recipient.displayName} won't appear when paying bills.`,
+    });
+  }
+
   async function confirmPayment() {
     if (isSubmittingPayment) {
       return;
+    }
+
+    const trimmedMemo = state.draft.memo.trim();
+    if (trimmedMemo.length < 8) {
+      state.updateDraft({ memo: BILL_PAYMENT_DEFAULT_MEMO });
     }
 
     setIsSubmittingPayment(true);
@@ -240,8 +243,9 @@ export function ModernBillPaymentDialog() {
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
-          state.updateDraft({ amountCents: 0 });
+          state.updateDraft({ amountCents: 0, memo: "" });
           setAmountInput("");
+          setNoteOpen(false);
           setStep("amount");
           setTime("instant");
           setScheduleOpen(false);
@@ -250,7 +254,9 @@ export function ModernBillPaymentDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button className="h-12 rounded-lg px-8 text-base">Pay a bill</Button>
+        {trigger ?? (
+          <Button className="h-12 rounded-lg px-8 text-base">Pay a bill</Button>
+        )}
       </DialogTrigger>
       <DialogContent showCloseButton={false} className={shellClass}>
         <DialogTitle className="sr-only">{headerTitle}</DialogTitle>
@@ -285,7 +291,8 @@ export function ModernBillPaymentDialog() {
                   counterpartyId={state.draft.counterpartyId}
                   fundingSources={fundingSources}
                   recipients={recipients}
-                  hasRecipients={hasRecipients}
+                  hasVisibleRecipients={hasVisibleRecipients}
+                  allRecipientsHidden={allRecipientsHidden}
                   amountInput={amountInput}
                   amountCents={amount}
                   available={available}
@@ -310,9 +317,11 @@ export function ModernBillPaymentDialog() {
             ) : step === "manageRecipients" ? (
               <StepMotion step="manageRecipients">
                 <ManageRecipientsStep
-                  recipients={recipients}
+                  recipients={manageableRecipients}
+                  hiddenCounterpartyIds={state.hiddenCounterpartyIds ?? []}
                   pendingRemoveId={pendingRemoveId}
                   onEdit={(recipient) => openEditRecipient(recipient, "manageRecipients")}
+                  onToggleVisibility={toggleRecipientVisibility}
                   onRequestRemove={setPendingRemoveId}
                   onCancelRemove={() => setPendingRemoveId(null)}
                   onConfirmRemove={confirmRemoveRecipient}
@@ -341,7 +350,11 @@ export function ModernBillPaymentDialog() {
                   counterparty={counterparty}
                   time={time}
                   scheduledDateLabel={scheduledDateLabel}
+                  memo={state.draft.memo}
+                  noteOpen={noteOpen}
                   isSubmitting={isSubmittingPayment}
+                  onNoteOpenChange={setNoteOpen}
+                  onMemoChange={(memo) => state.updateDraft({ memo })}
                   onSubmit={() => {
                     void confirmPayment();
                   }}

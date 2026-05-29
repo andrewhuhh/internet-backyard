@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Counterparty } from "@/lib/settlement/schema";
 import { cn } from "@/lib/utils";
@@ -9,8 +9,10 @@ export function RecipientManageRow({
   name,
   bankLabel,
   status,
+  hidden,
   pending,
   onEdit,
+  onToggleVisibility,
   onRequestRemove,
   onCancelRemove,
   onConfirmRemove,
@@ -18,8 +20,10 @@ export function RecipientManageRow({
   name: string;
   bankLabel: string | null;
   status: Counterparty["status"];
+  hidden: boolean;
   pending: boolean;
   onEdit: () => void;
+  onToggleVisibility: () => void;
   onRequestRemove: () => void;
   onCancelRemove: () => void;
   onConfirmRemove: () => void;
@@ -53,15 +57,30 @@ export function RecipientManageRow({
   }
 
   return (
-    <div className="rounded-mbp-row! bg-mbp-surface! px-3 py-2">
+    <div
+      className={cn(
+        "rounded-mbp-row! bg-mbp-surface! px-3 py-2",
+        hidden && "opacity-60",
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           {status !== "pending_review" ? <CounterpartyStatusIcon status={status} /> : null}
           <p className="min-w-0 truncate text-mbp-body font-mbp-body leading-tight text-mbp-fg">
             {name}
+            {hidden ? <span className="text-mbp-muted"> · Hidden</span> : null}
           </p>
         </div>
         <div className="flex shrink-0 items-center">
+          <Button
+            variant="link"
+            type="button"
+            className={cn(iconButtonClass, "size-6")}
+            onClick={onToggleVisibility}
+            aria-label={hidden ? `Show ${name}` : `Hide ${name}`}
+          >
+            {hidden ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
+          </Button>
           <Button
             variant="link"
             type="button"

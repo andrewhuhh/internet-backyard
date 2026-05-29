@@ -53,6 +53,7 @@ type StoreState = {
   setScenario: (scenarioId: ScenarioId) => void;
   setStep: (step: FlowStep, direction?: 1 | -1) => void;
   updateDraft: (patch: Partial<Draft>) => void;
+  setActiveAccount: (railId: string) => void;
   addCounterparty: (input: {
     displayName: string;
     type: CounterpartyType;
@@ -71,6 +72,8 @@ type StoreState = {
     },
   ) => void;
   removeCounterparty: (id: string) => void;
+  hideCounterparty: (id: string) => void;
+  showCounterparty: (id: string) => void;
   addRail: (input: {
     label: string;
     type: RailType;
@@ -144,6 +147,16 @@ export const useSettlementStore = create<StoreState>()(
       },
       setStep: (step, direction = 1) => set({ step, direction, lastError: null }),
       updateDraft: (patch) => set({ draft: { ...get().draft, ...patch }, lastError: null }),
+      setActiveAccount: (railId) => {
+        const rail =
+          selectAvailableRails(get()).find((item) => item.id === railId) ??
+          selectAllRails(get()).find((item) => item.id === railId);
+        if (!rail) return;
+        set({
+          draft: { ...get().draft, railId: rail.id, currency: rail.currency },
+          lastError: null,
+        });
+      },
       addCounterparty: (input) => {
         const counterparty = counterpartySchema.parse({
           id: `cp_local_${Date.now()}`,
@@ -219,6 +232,32 @@ export const useSettlementStore = create<StoreState>()(
           localCounterparties,
           hiddenCounterpartyIds,
           draft,
+          lastError: null,
+        });
+      },
+      hideCounterparty: (id) => {
+        const current = get();
+        const hidden = current.hiddenCounterpartyIds ?? [];
+        if (hidden.includes(id)) {
+          return;
+        }
+
+        const hiddenCounterpartyIds = [...hidden, id];
+        const nextState = { ...current, hiddenCounterpartyIds };
+        const draft =
+          current.draft.counterpartyId === id
+            ? {
+                ...current.draft,
+                counterpartyId: selectAvailableCounterparties(nextState)[0]?.id ?? "",
+              }
+            : current.draft;
+
+        set({ hiddenCounterpartyIds, draft, lastError: null });
+      },
+      showCounterparty: (id) => {
+        const current = get();
+        set({
+          hiddenCounterpartyIds: (current.hiddenCounterpartyIds ?? []).filter((item) => item !== id),
           lastError: null,
         });
       },
@@ -314,17 +353,26 @@ export const useSettlementStore = create<StoreState>()(
   ),
 );
 
-export function selectAvailableCounterparties(state: StoreState) {
+export function isCounterpartyHidden(state: StoreState, id: string) {
+  return (state.hiddenCounterpartyIds ?? []).includes(id);
+}
+
+/** Recipients in the manage view (includes hidden). */
+export function selectManageableCounterparties(state: StoreState) {
   const availability = scenarioAvailability[state.scenarioId];
-  const hidden = new Set(state.hiddenCounterpartyIds ?? []);
   const localIds = new Set(state.localCounterparties.map((item) => item.id));
   return [
     ...state.seededCounterparties.filter(
-      (item) =>
-        availability.counterpartyIds.includes(item.id) && !hidden.has(item.id) && !localIds.has(item.id),
+      (item) => availability.counterpartyIds.includes(item.id) && !localIds.has(item.id),
     ),
     ...state.localCounterparties,
   ];
+}
+
+/** Visible recipients for payment picker (mini select). */
+export function selectAvailableCounterparties(state: StoreState) {
+  const hidden = new Set(state.hiddenCounterpartyIds ?? []);
+  return selectManageableCounterparties(state).filter((item) => !hidden.has(item.id));
 }
 
 export function selectAvailableRails(state: StoreState) {
@@ -342,6 +390,49 @@ export function selectResolvedDependencies(state: StoreState) {
     counterparty: counterparties.find((item) => item.id === state.draft.counterpartyId),
     rail: rails.find((item) => item.id === state.draft.railId),
   };
+}
+
+export function selectActiveRail(state: StoreState) {
+  return selectAvailableRails(state).find((item) => item.id === state.draft.railId);
+}
+
+/** All counterparties for ledger/history (includes hidden and out-of-scenario). */
+export function selectAllCounterparties(state: StoreState) {
+  const localIds = new Set(state.localCounterparties.map((item) => item.id));
+  return [
+    ...state.seededCounterparties.filter((item) => !localIds.has(item.id)),
+    ...state.localCounterparties,
+  ];
+}
+
+/** All rails for ledger/history (includes out-of-scenario). */
+export function selectAllRails(state: StoreState) {
+  return [...state.seededRails, ...state.localRails];
+}
+
+export function resolveCounterpartyName(state: StoreState, counterpartyId: string) {
+  return (
+    selectAllCounterparties(state).find((item) => item.id === counterpartyId)?.displayName ??
+    "Unknown recipient"
+  );
+}
+
+export function resolveRailLabel(state: StoreState, railId: string) {
+  return selectAllRails(state).find((item) => item.id === railId)?.label ?? "Unknown source";
+}
+
+export function selectAccountSpentCents(state: StoreState, railId: string) {
+  return state.receipts
+    .filter((receipt) => receipt.railId === railId && receipt.status === "settled")
+    .reduce((sum, receipt) => sum + receipt.amountCents, 0);
+}
+
+export function selectAccountBalanceCents(state: StoreState, railId: string) {
+  const rail =
+    selectAvailableRails(state).find((item) => item.id === railId) ??
+    selectAllRails(state).find((item) => item.id === railId);
+  if (!rail) return 0;
+  return Math.max(0, rail.availableCents - selectAccountSpentCents(state, railId));
 }
 
 export function cents(value: number) {

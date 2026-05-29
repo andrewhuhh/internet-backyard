@@ -7,6 +7,11 @@ import { cn } from "@/lib/utils";
 import { AddRecipientField } from "./add-recipient-field";
 import { AddRecipientFormSection } from "./add-recipient-form-section";
 import { AddRecipientSelect } from "./add-recipient-select";
+import {
+  sectionForValidatePath,
+  validateAddRecipientField,
+  type AddRecipientValidatePath,
+} from "./add-recipient-validation";
 import { primaryButtonClass } from "./styles";
 import {
   bankSectionHasError,
@@ -18,6 +23,7 @@ import type {
   AddRecipientErrors,
   AddRecipientForm,
   AddRecipientSectionKey,
+  BankAccountFormField,
   BankAccountType,
   CounterpartyType,
   SettlementNetwork,
@@ -59,6 +65,36 @@ export function AddRecipientStep({
     }
   };
 
+  const validateOnBlur = (path: AddRecipientValidatePath) => {
+    const message = validateAddRecipientField(form, path);
+    onErrorsChange((current) => {
+      if (path.startsWith("bankAccount.")) {
+        const field = path.slice("bankAccount.".length) as BankAccountFormField;
+        const bankAccount = { ...current.bankAccount };
+        if (message) {
+          bankAccount[field] = message;
+        } else {
+          delete bankAccount[field];
+        }
+        const hasBankErrors = bankAccount && Object.values(bankAccount).some(Boolean);
+        return {
+          ...current,
+          bankAccount: hasBankErrors ? bankAccount : undefined,
+        };
+      }
+      const field = path as keyof Omit<AddRecipientForm, "bankAccount">;
+      if (message) {
+        return { ...current, [field]: message };
+      }
+      const { [field]: _, ...rest } = current;
+      return rest;
+    });
+    if (message) {
+      const section = sectionForValidatePath(path);
+      onSectionsChange((current) => ({ ...current, [section]: true }));
+    }
+  };
+
   return (
     <>
       <div className="space-y-4 pb-6">
@@ -77,6 +113,7 @@ export function AddRecipientStep({
               setForm((current) => ({ ...current, displayName }));
               clearFieldError("displayName");
             }}
+            onBlur={() => validateOnBlur("displayName")}
           />
           <AddRecipientSelect
             id="modern-payment-vendor-type"
@@ -91,6 +128,7 @@ export function AddRecipientStep({
               }));
               clearFieldError("type");
             }}
+            onClose={() => validateOnBlur("type")}
           />
         </AddRecipientFormSection>
 
@@ -113,6 +151,7 @@ export function AddRecipientStep({
               }));
               clearFieldError("network");
             }}
+            onClose={() => validateOnBlur("network")}
           />
           <AddRecipientField
             id="modern-payment-vendor-ref"
@@ -123,6 +162,7 @@ export function AddRecipientStep({
               setForm((current) => ({ ...current, externalRef }));
               clearFieldError("externalRef");
             }}
+            onBlur={() => validateOnBlur("externalRef")}
           />
         </AddRecipientFormSection>
 
@@ -144,6 +184,7 @@ export function AddRecipientStep({
               }));
               clearBankError("bankName");
             }}
+            onBlur={() => validateOnBlur("bankAccount.bankName")}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <AddRecipientField
@@ -162,6 +203,7 @@ export function AddRecipientStep({
                 }));
                 clearBankError("routingNumber");
               }}
+              onBlur={() => validateOnBlur("bankAccount.routingNumber")}
             />
             <AddRecipientField
               id="modern-payment-bank-account"
@@ -179,6 +221,7 @@ export function AddRecipientStep({
                 }));
                 clearBankError("accountNumber");
               }}
+              onBlur={() => validateOnBlur("bankAccount.accountNumber")}
             />
           </div>
           <AddRecipientSelect
@@ -197,6 +240,7 @@ export function AddRecipientStep({
               }));
               clearBankError("accountType");
             }}
+            onClose={() => validateOnBlur("bankAccount.accountType")}
           />
         </AddRecipientFormSection>
       </div>

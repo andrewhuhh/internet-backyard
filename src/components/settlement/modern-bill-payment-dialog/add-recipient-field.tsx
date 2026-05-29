@@ -11,6 +11,7 @@ export function AddRecipientField({
   maxLength,
   autoComplete,
   onChange,
+  onBlur,
 }: {
   id: string;
   label: string;
@@ -20,6 +21,7 @@ export function AddRecipientField({
   maxLength?: number;
   autoComplete?: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }) {
   return (
     <div className="space-y-1">
@@ -31,10 +33,11 @@ export function AddRecipientField({
         maxLength={maxLength}
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
         placeholder={label}
         className={addRecipientControlClass}
       />
-      {error ? <p className="text-mbp-caption text-mbp-danger">{error}</p> : null}
+      {error ? <p className="text-mbp-caption text-mbp-danger px-2">{error}</p> : null}
     </div>
   );
 }

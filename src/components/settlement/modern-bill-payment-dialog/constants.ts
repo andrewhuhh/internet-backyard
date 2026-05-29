@@ -1,6 +1,13 @@
 import { counterpartySchema, counterpartyBankAccountSchema } from "@/lib/settlement/schema";
 import type { BankAccountType, CounterpartyType, SettlementNetwork } from "@/lib/settlement/schema";
 export const SELECT_ADD_RECIPIENT_VALUE = "__add_recipient__";
+export const SELECT_MANAGE_RECIPIENTS_VALUE = "__manage_recipients__";
+
+/** Show recipient search once the list grows past this count. */
+export const RECIPIENT_SEARCH_THRESHOLD = 3;
+
+/** Fallback when the user submits without a private note (schema requires min 8 chars). */
+export const BILL_PAYMENT_DEFAULT_MEMO = "Bill payment";
 
 export const MAX_AMOUNT_CENTS = 99_999_999_999_999;
 

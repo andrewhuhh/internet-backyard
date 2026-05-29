@@ -21,6 +21,7 @@ export function AddRecipientSelect({
   options,
   error,
   onValueChange,
+  onClose,
 }: {
   id: string;
   label: string;
@@ -28,13 +29,23 @@ export function AddRecipientSelect({
   options: Array<{ value: string; label: string }>;
   error?: string;
   onValueChange: (value: string) => void;
+  /** Fires when the dropdown closes (blur-equivalent for selects). */
+  onClose?: () => void;
 }) {
   const selected = options.find((item) => item.value === value);
   const displayLabel = selected?.label ?? label;
 
   return (
     <div className="space-y-1">
-      <Select value={value} onValueChange={onValueChange}>
+      <Select
+        value={value}
+        onValueChange={onValueChange}
+        onOpenChange={(open) => {
+          if (!open) {
+            onClose?.();
+          }
+        }}
+      >
         <SelectTrigger
           id={id}
           className={cn(addRecipientControlClass, "min-h-13 h-auto items-center py-2")}
@@ -54,7 +65,7 @@ export function AddRecipientSelect({
           ))}
         </SelectContent>
       </Select>
-      {error ? <p className="text-mbp-caption text-mbp-danger">{error}</p> : null}
+      {error ? <p className="text-mbp-caption text-mbp-danger px-2">{error}</p> : null}
     </div>
   );
 }

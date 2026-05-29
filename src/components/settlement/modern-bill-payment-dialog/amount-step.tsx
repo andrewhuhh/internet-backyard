@@ -13,7 +13,7 @@ import {
   formatAmountInput,
   parseAmountInput,
 } from "./amount-utils";
-import { SELECT_ADD_RECIPIENT_VALUE } from "./constants";
+import { SELECT_ADD_RECIPIENT_VALUE, SELECT_MANAGE_RECIPIENTS_VALUE } from "./constants";
 import { AnimatedAmountInput } from "./animated-amount-input";
 import { MiniSelect } from "./mini-select";
 import {
@@ -30,7 +30,8 @@ type AmountStepProps = {
   counterpartyId: string;
   fundingSources: SettlementRail[];
   recipients: Counterparty[];
-  hasRecipients: boolean;
+  hasVisibleRecipients: boolean;
+  allRecipientsHidden: boolean;
   amountInput: string;
   amountCents: number;
   available: number;
@@ -54,7 +55,8 @@ export function AmountStep({
   counterpartyId,
   fundingSources,
   recipients,
-  hasRecipients,
+  hasVisibleRecipients,
+  allRecipientsHidden,
   amountInput,
   amountCents,
   available,
@@ -76,6 +78,19 @@ export function AmountStep({
   const exceeds = available > 0 && amountCents > available;
   const amountFontStyle = amountFontSizeStyle(amountInput.length);
   const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
+  const recipientOptions = hasVisibleRecipients
+    ? recipients.map((item) => ({
+        value: item.id,
+        label: item.displayName,
+      }))
+    : allRecipientsHidden
+      ? [{ value: SELECT_MANAGE_RECIPIENTS_VALUE, label: "Manage recipients" }]
+      : [{ value: SELECT_ADD_RECIPIENT_VALUE, label: "Add recipient" }];
+  const recipientPlaceholder = hasVisibleRecipients
+    ? "Select recipient"
+    : allRecipientsHidden
+      ? "Manage recipients"
+      : "Add recipient";
 
   return (
     <>
@@ -94,25 +109,22 @@ export function AmountStep({
         <div className="flex min-w-0 flex-col">
           <MiniSelect
             label="To"
-            value={hasRecipients ? counterpartyId : ""}
-            placeholder={hasRecipients ? "Select recipient" : "Add recipient"}
+            value={hasVisibleRecipients ? counterpartyId : ""}
+            placeholder={recipientPlaceholder}
             onValueChange={(next) => {
               if (next === SELECT_ADD_RECIPIENT_VALUE) {
                 onAddRecipient();
                 return;
               }
+              if (next === SELECT_MANAGE_RECIPIENTS_VALUE) {
+                onManageRecipients();
+                return;
+              }
               onCounterpartyChange(next);
             }}
-            options={
-              hasRecipients
-                ? recipients.map((item) => ({
-                    value: item.id,
-                    label: item.displayName,
-                  }))
-                : [{ value: SELECT_ADD_RECIPIENT_VALUE, label: "Add recipient" }]
-            }
+            options={recipientOptions}
           />
-          {hasRecipients ? (
+          {hasVisibleRecipients || allRecipientsHidden ? (
             <Button
               variant="link"
               type="button"
@@ -121,7 +133,7 @@ export function AmountStep({
               )}
               onClick={onManageRecipients}
             >
-              Add/manage
+              {allRecipientsHidden ? "Manage recipients" : "Add/manage"}
             </Button>
           ) : null}
         </div>
@@ -129,7 +141,10 @@ export function AmountStep({
 
       <div className="py-9 text-center">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2 items-center">
+          <label
+            htmlFor="modern-payment-amount"
+            className="flex w-full cursor-text flex-col items-center gap-2"
+          >
             <div
               className={cn("flex max-w-full min-w-0 items-baseline justify-center", amountDisplayClass)}
               style={amountFontStyle}
@@ -165,7 +180,7 @@ export function AmountStep({
                 {formatAmountDisplay(available)} available
               </span>
             )}
-          </div>
+          </label>
           <div className="flex items-center justify-center gap-2 text-mbp-caption">
             <Button
               variant={time === "instant" ? "secondary" : "ghost"}

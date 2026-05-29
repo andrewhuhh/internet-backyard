@@ -34,6 +34,22 @@ export function recipientBankLabel(recipient: Counterparty): string | null {
   return recipient.bankAccount ? formatBankAccountDetail(recipient.bankAccount) : null;
 }
 
+export function recipientMatchesSearch(recipient: Counterparty, query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return true;
+  }
+  if (recipient.displayName.toLowerCase().includes(normalized)) {
+    return true;
+  }
+  const bankLabel = recipientBankLabel(recipient);
+  return bankLabel?.toLowerCase().includes(normalized) ?? false;
+}
+
+export function filterRecipientsBySearch<T extends Counterparty>(recipients: T[], query: string) {
+  return recipients.filter((recipient) => recipientMatchesSearch(recipient, query));
+}
+
 export const COUNTERPARTY_TYPE_OPTIONS = counterpartyTypeSchema.options.map((value) => ({
   value,
   label: counterpartyTypeLabel(value),
