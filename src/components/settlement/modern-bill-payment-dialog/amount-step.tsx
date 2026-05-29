@@ -14,6 +14,7 @@ import {
   parseAmountInput,
 } from "./amount-utils";
 import { SELECT_ADD_RECIPIENT_VALUE } from "./constants";
+import { AnimatedAmountInput } from "./animated-amount-input";
 import { MiniSelect } from "./mini-select";
 import {
   amountDisplayClass,
@@ -134,17 +135,12 @@ export function AmountStep({
               style={amountFontStyle}
             >
               <span className={cn(isEmpty && "text-mbp-placeholder")}>$</span>
-              <input
+              <AnimatedAmountInput
                 id="modern-payment-amount"
                 name="modern-payment-amount"
-                aria-label="Payment amount"
                 placeholder="0"
-                className={cn(
-                  "w-auto max-w-full bg-transparent text-center outline-none field-sizing-content placeholder:text-mbp-placeholder",
-                  amountDisplayClass,
-                  isEmpty && "min-w-[1ch] text-mbp-placeholder",
-                )}
-                inputMode="decimal"
+                className={cn("w-auto max-w-full", amountDisplayClass)}
+                isEmpty={isEmpty}
                 value={amountInput}
                 onChange={(event) => {
                   const formatted = formatAmountInput(event.target.value);

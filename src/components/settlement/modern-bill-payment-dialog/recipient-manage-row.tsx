@@ -57,7 +57,7 @@ export function RecipientManageRow({
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           {status !== "pending_review" ? <CounterpartyStatusIcon status={status} /> : null}
-          <p className="min-w-0 truncate text-mbp-body font-mbp-emphasis leading-tight text-mbp-fg">
+          <p className="min-w-0 truncate text-mbp-body font-mbp-body leading-tight text-mbp-fg">
             {name}
           </p>
         </div>
