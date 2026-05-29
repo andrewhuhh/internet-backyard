@@ -1,0 +1,39 @@
+import Link from "next/link";
+
+const explorations = [
+  "Market terminal",
+  "Developer console",
+  "Finance operations desk",
+];
+
+export default function ExplorationsPage() {
+  return (
+    <main className="min-h-screen bg-[#0d0f0d] px-6 py-8 text-[#f2efe4] sm:px-10">
+      <div className="mx-auto max-w-6xl">
+        <Link className="font-mono text-sm text-[#9aa997]" href="/">
+          / home
+        </Link>
+        <h1 className="mt-12 max-w-3xl text-5xl font-semibold tracking-tight">
+          Design explorations
+        </h1>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {explorations.map((name) => (
+            <section
+              className="min-h-64 rounded-lg border border-[#2d332d] bg-[#141814] p-5"
+              key={name}
+            >
+              <p className="font-mono text-xs uppercase tracking-[0.16em] text-[#90a58c]">
+                Direction
+              </p>
+              <h2 className="mt-6 text-2xl font-medium">{name}</h2>
+              <p className="mt-4 text-sm leading-6 text-[#aaa599]">
+                Placeholder for comparing visual language, density, copy, and
+                transition behavior before committing to the final primitive.
+              </p>
+            </section>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
