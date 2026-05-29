@@ -159,11 +159,12 @@ a {
   .modern-payment-select-trigger {
     min-height: 3.25rem;
     align-items: center;
-    border: 0;
+    border: 0 !important;
     border-radius: var(--mp-control-radius);
     background: var(--mp-control);
     padding: 0.625rem 0.75rem;
     text-align: left;
+    box-shadow: none !important;
   }
 
   .modern-payment-select-trigger:hover {

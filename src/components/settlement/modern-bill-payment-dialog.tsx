@@ -46,11 +46,12 @@ export function ModernBillPaymentDialog() {
   const exceeds = available > 0 && amount > available;
   const canContinue = Boolean(counterparty && rail && !isEmpty && !exceeds);
   const amountTextSize = useMemo(() => {
-    const digits = Math.max(1, Math.floor(amount / 100).toString().length);
-    if (digits >= 8) return "text-[1.7rem]";
-    if (digits >= 6) return "text-[2rem]";
-    if (digits >= 5) return "text-[2.35rem]";
-    return "text-[2.7rem]";
+    return sizeByCharacterCount(Math.max(1, Math.floor(amount / 100).toString().length), {
+      base: "text-[2.7rem]",
+      medium: "text-[2.35rem]",
+      small: "text-[2rem]",
+      smallest: "text-[1.7rem]",
+    });
   }, [amount]);
   const amountDisplay = amount > 0 ? (amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0";
   const amountInputWidth = `${Math.max(1, amountDisplay.length) + 0.5}ch`;
@@ -262,13 +263,22 @@ function MiniSelect({
   verified?: boolean;
 }) {
   const selected = options.find((item) => item.value === value);
+  const displayLabel = selected?.label ?? placeholder;
+  const labelSize = sizeByCharacterCount(displayLabel.length, {
+    base: "text-[0.96rem]",
+    medium: "text-[0.88rem]",
+    small: "text-[0.8rem]",
+    smallest: "text-[0.74rem]",
+  });
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="modern-payment-select-trigger w-full">
         <span className="min-w-0">
           <span className="modern-payment-label block">{label}</span>
-          <span className="modern-payment-value mt-1 flex items-center gap-1 truncate">
-            <SelectValue placeholder={placeholder}>{selected?.label}</SelectValue>
+          <span className={cn("modern-payment-value mt-1 flex items-center gap-1", labelSize)}>
+            <span className="max-w-[12ch] truncate">
+              <SelectValue placeholder={placeholder}>{displayLabel}</SelectValue>
+            </span>
             {verified && selected && <CheckCircle2 className="size-3.5 shrink-0 text-[#a6a6a6]" />}
           </span>
         </span>
@@ -285,6 +295,16 @@ function MiniSelect({
       </SelectContent>
     </Select>
   );
+}
+
+function sizeByCharacterCount(
+  count: number,
+  sizes: { base: string; medium: string; small: string; smallest: string },
+) {
+  if (count > 10) return sizes.smallest;
+  if (count > 8) return sizes.small;
+  if (count > 6) return sizes.medium;
+  return sizes.base;
 }
 
 function ConfirmRow({ label, value, verified = false }: { label: string; value: string; verified?: boolean }) {
