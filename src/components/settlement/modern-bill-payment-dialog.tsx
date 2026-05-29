@@ -102,6 +102,7 @@ export function ModernBillPaymentDialog() {
           <AnimatePresence mode="popLayout">
             {step === "amount" ? (
               <motion.div
+                className="modern-payment-animated-panel"
                 key="amount"
                 initial={{ opacity: 0, x: -14, filter: "blur(2px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
@@ -206,6 +207,7 @@ export function ModernBillPaymentDialog() {
               </motion.div>
             ) : (
               <motion.div
+                className="modern-payment-animated-panel"
                 key="confirm"
                 initial={{ opacity: 0, x: 18, filter: "blur(2px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}

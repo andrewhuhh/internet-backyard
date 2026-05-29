@@ -177,6 +177,10 @@ a {
     color: var(--mp-text);
   }
 
+  .modern-payment-animated-panel {
+    will-change: transform, opacity, filter;
+  }
+
   .modern-payment-select-trigger {
     min-height: var(--mp-control-h);
     align-items: center;
@@ -186,6 +190,7 @@ a {
     padding: 0.625rem 0.75rem;
     text-align: left;
     box-shadow: none !important;
+    will-change: background-color;
   }
 
   .modern-payment-select-trigger:hover {
@@ -246,6 +251,7 @@ a {
     border-radius: 999px;
     color: var(--mp-muted);
     transition: color 120ms ease;
+    will-change: color;
   }
 
   .modern-payment-icon-button:hover {
@@ -326,6 +332,7 @@ a {
     color: var(--mp-muted);
     font-weight: 650;
     transition: color 120ms ease, background-color 120ms ease;
+    will-change: color, background-color;
   }
 
   .modern-payment-pill:hover {
@@ -346,6 +353,7 @@ a {
   .modern-payment-primary {
     background: var(--mp-action);
     color: var(--mp-inverse);
+    will-change: background-color;
   }
 
   .modern-payment-primary:hover {
