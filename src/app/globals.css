@@ -52,6 +52,7 @@
   --color-mbp-placeholder: var(--mbp-placeholder);
   --color-mbp-inverse: var(--mbp-inverse);
   --color-mbp-danger: var(--mbp-danger);
+  --color-mbp-verified: var(--mbp-verified);
   --color-mbp-shell: var(--mbp-shell);
   --color-mbp-portal: var(--mbp-portal);
   --color-mbp-surface: var(--mbp-surface);
@@ -145,6 +146,7 @@ a {
   --mbp-placeholder: oklch(0.52 0 0);
   --mbp-inverse: oklch(0.12 0 0);
   --mbp-danger: oklch(0.64 0.22 25);
+  --mbp-verified: oklch(0.68 0.17 252);
   --mbp-shell: oklch(0.22 0 0);
   --mbp-portal: oklch(0.25 0 0);
   --mbp-surface: oklch(0.28 0 0);
@@ -200,6 +202,20 @@ a {
 }
 
 @layer components {
+  [data-sonner-toaster] {
+    font-family: var(--font-sans);
+    --width: 22rem;
+  }
+
+  [data-sonner-toast][data-styled="true"] [data-description] {
+    color: var(--muted-foreground);
+  }
+
+  [data-sonner-toast][data-styled="true"] [data-title] {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
   .mbp-scroll {
     scrollbar-width: thin;
     scrollbar-color: oklch(1 0 0 / 0.22) transparent;

@@ -3,11 +3,22 @@ import type { Counterparty } from "@/lib/settlement/schema";
 import { cn } from "@/lib/utils";
 import { counterpartyStatusLabel } from "./recipient-utils";
 
-export function CounterpartyStatusIcon({ status }: { status: Counterparty["status"] }) {
+export function CounterpartyStatusIcon({
+  status,
+  size = "sm",
+}: {
+  status: Counterparty["status"];
+  size?: "sm" | "md";
+}) {
   const label = counterpartyStatusLabel(status);
   const className = cn(
-    "size-3.5 shrink-0",
-    status === "blocked" ? "text-mbp-danger" : "text-mbp-muted",
+    "shrink-0",
+    size === "md" ? "size-4" : "size-3.5",
+    status === "verified"
+      ? "text-mbp-verified"
+      : status === "blocked"
+        ? "text-mbp-danger"
+        : "text-mbp-muted",
   );
 
   const icon =

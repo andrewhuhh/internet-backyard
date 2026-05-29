@@ -8,6 +8,7 @@ import type { Counterparty, SettlementRail } from "@/lib/settlement/schema";
 import { cn } from "@/lib/utils";
 import { amountFontSizeStyle, formatAmountDisplay } from "./amount-utils";
 import { ConfirmRow } from "./confirm-row";
+import { CounterpartyStatusIcon } from "./counterparty-status-icon";
 import { addRecipientControlClass, amountDisplayClass, captionMutedClass, primaryButtonClass } from "./styles";
 import type { PaymentTime } from "./types";
 
@@ -52,15 +53,23 @@ export function ConfirmStep({
 
   return (
     <>
-      <div className="py-4 pb-5 text-center">
+      <div className="pb-6 text-center">
         <div className={cn(amountDisplayClass, "text-mbp-fg")} style={amountFontStyle}>
           {formatAmountDisplay(amountCents)}
           <span className="ml-1 text-xs">USD</span>
         </div>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         <ConfirmRow label="From" value={rail?.label ?? "Credit pool"} />
-        <ConfirmRow label="To" value={counterparty?.displayName ?? "Nova Foundry"} />
+        <ConfirmRow
+          label="To"
+          value={counterparty?.displayName ?? "Nova Foundry"}
+          valueLeading={
+            counterparty?.status === "verified" ? (
+              <CounterpartyStatusIcon status="verified" size="md" />
+            ) : null
+          }
+        />
         {counterparty?.bankAccount ? (
           <ConfirmRow label="Bank" value={formatBankAccountDetail(counterparty.bankAccount)} />
         ) : null}
@@ -68,9 +77,13 @@ export function ConfirmStep({
       </div>
       {showNoteField ? (
         <div className="mt-3 space-y-1">
-          <label htmlFor="modern-payment-private-note" className={cn("block", captionMutedClass)}>
+          <label 
+            htmlFor="modern-payment-private-note" 
+            className={cn("sr-only", captionMutedClass)}
+          >
             Private note
           </label>
+     
           <Textarea
             ref={noteRef}
             id="modern-payment-private-note"
@@ -79,7 +92,8 @@ export function ConfirmStep({
             maxLength={180}
             rows={3}
             disabled={isSubmitting}
-            placeholder="Only visible to your team"
+            placeholder="Private note, only visible to your team."
+       
             className={cn(addRecipientControlClass, "min-h-20 resize-none py-2.5")}
             onChange={(event) => onMemoChange(event.target.value)}
           />

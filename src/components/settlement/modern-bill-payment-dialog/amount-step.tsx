@@ -15,6 +15,7 @@ import {
 } from "./amount-utils";
 import { SELECT_ADD_RECIPIENT_VALUE, SELECT_MANAGE_RECIPIENTS_VALUE } from "./constants";
 import { AnimatedAmountInput } from "./animated-amount-input";
+import { CounterpartyStatusIcon } from "./counterparty-status-icon";
 import { MiniSelect } from "./mini-select";
 import {
   amountDisplayClass,
@@ -82,6 +83,10 @@ export function AmountStep({
     ? recipients.map((item) => ({
         value: item.id,
         label: item.displayName,
+        leading:
+          item.status === "verified" ? (
+            <CounterpartyStatusIcon status="verified" size="md" />
+          ) : undefined,
       }))
     : allRecipientsHidden
       ? [{ value: SELECT_MANAGE_RECIPIENTS_VALUE, label: "Manage recipients" }]
@@ -91,6 +96,11 @@ export function AmountStep({
     : allRecipientsHidden
       ? "Manage recipients"
       : "Add recipient";
+  const selectedRecipient = recipients.find((item) => item.id === counterpartyId);
+  const recipientVerifiedLeading =
+    selectedRecipient?.status === "verified" ? (
+      <CounterpartyStatusIcon status="verified" size="md" />
+    ) : null;
 
   return (
     <>
@@ -111,6 +121,7 @@ export function AmountStep({
             label="To"
             value={hasVisibleRecipients ? counterpartyId : ""}
             placeholder={recipientPlaceholder}
+            valueLeading={recipientVerifiedLeading}
             onValueChange={(next) => {
               if (next === SELECT_ADD_RECIPIENT_VALUE) {
                 onAddRecipient();

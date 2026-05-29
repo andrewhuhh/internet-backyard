@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { ReceiptDetailDialog } from "@/components/settlement/modern-bill-payment-dialog/receipt-detail-dialog";
 import type { Counterparty, SettlementReceipt } from "@/lib/settlement/schema";
 import { selectAllCounterparties, useSettlementStore } from "@/lib/settlement/store";
+import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 
 function formatUsd(cents: number) {
@@ -34,23 +36,34 @@ const statusLabel: Record<SettlementReceipt["status"], string> = {
 function PaymentHistoryRow({
   receipt,
   counterpartyName,
+  onSelect,
 }: {
   receipt: SettlementReceipt;
   counterpartyName: string;
+  onSelect: (receipt: SettlementReceipt) => void;
 }) {
   const dateLabel = format(parseISO(receipt.createdAt), "MMM d");
 
   return (
-    <li className="flex items-center justify-between gap-3 border-b border-border/60 p-3 last:border-0 bg-muted rounded-xl">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{counterpartyName}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {dateLabel} · {statusLabel[receipt.status]}
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect(receipt)}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 rounded-xl border-b border-border/60 bg-muted p-3 text-left transition-colors last:border-0",
+          "hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        )}
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{counterpartyName}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {dateLabel} · {statusLabel[receipt.status]}
+          </p>
+        </div>
+        <p className="shrink-0 text-sm font-medium tabular-nums">
+          {receipt.status === "failed" ? formatUsd(receipt.amountCents) : `-${formatUsd(receipt.amountCents)}`}
         </p>
-      </div>
-      <p className="shrink-0 text-sm font-medium tabular-nums">
-        {receipt.status === "failed" ? formatUsd(receipt.amountCents) : `-${formatUsd(receipt.amountCents)}`}
-      </p>
+      </button>
     </li>
   );
 }
@@ -62,6 +75,7 @@ type PaymentHistorySectionProps = {
 const subscribeNoop = () => () => {};
 
 export function PaymentHistorySection({ railId }: PaymentHistorySectionProps) {
+  const [selectedReceipt, setSelectedReceipt] = useState<SettlementReceipt | null>(null);
   const hydrated = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const receipts = useSettlementStore((state) => state.receipts);
   const counterparties = useSettlementStore(useShallow(selectAllCounterparties));
@@ -91,23 +105,35 @@ export function PaymentHistorySection({ railId }: PaymentHistorySectionProps) {
   }
 
   return (
-    <div className="space-y-5" aria-label="Payment history">
-      {groups.map(([label, items]) => (
-        <section key={label}>
-          <h2 className="mb-1 text-base font-medium uppercase tracking-wide text-muted-foreground px-1">
-            {label}
-          </h2>
-          <ul>
-            {items.map((receipt) => (
-              <PaymentHistoryRow
-                key={receipt.id}
-                receipt={receipt}
-                counterpartyName={resolveCounterpartyName(counterparties, receipt.counterpartyId)}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
-    </div>
+    <>
+      <div className="space-y-5" aria-label="Payment history">
+        {groups.map(([label, items]) => (
+          <section key={label}>
+            <h2 className="mb-1 px-1 text-base font-medium uppercase tracking-wide text-muted-foreground">
+              {label}
+            </h2>
+            <ul>
+              {items.map((receipt) => (
+                <PaymentHistoryRow
+                  key={receipt.id}
+                  receipt={receipt}
+                  counterpartyName={resolveCounterpartyName(counterparties, receipt.counterpartyId)}
+                  onSelect={setSelectedReceipt}
+                />
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <ReceiptDetailDialog
+        receipt={selectedReceipt}
+        open={selectedReceipt !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedReceipt(null);
+          }
+        }}
+      />
+    </>
   );
 }
