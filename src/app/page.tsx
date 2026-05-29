@@ -17,6 +17,11 @@ export default function Home() {
       label: "Transfer Primitive",
       detail: "The eventual composable dialog prototype.",
     },
+    {
+      href: "/components",
+      label: "Components",
+      detail: "Inventory of the primitives and UI states used in the prototype.",
+    },
   ];
 
   return (
@@ -47,7 +52,7 @@ export default function Home() {
           </p>
         </section>
 
-        <nav className="grid gap-4 pb-6 md:grid-cols-3">
+        <nav className="grid gap-4 pb-6 md:grid-cols-4">
           {routes.map((route) => (
             <Link
               key={route.href}
