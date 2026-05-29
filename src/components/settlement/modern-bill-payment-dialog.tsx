@@ -135,7 +135,7 @@ export function ModernBillPaymentDialog() {
                   <label className="sr-only" htmlFor="modern-payment-amount">
                     Amount
                   </label>
-                  <div className={cn("mx-auto flex max-w-full items-baseline justify-center gap-2 font-semibold tracking-tight", amountTextSize)}>
+                  <div className={cn("mx-auto flex max-w-full items-baseline justify-center font-semibold tracking-tight", amountTextSize)}>
                     <span className={cn(isEmpty && "text-[#7f7f7f]")}>$</span>
                     <input
                       id="modern-payment-amount"
