@@ -168,7 +168,8 @@ a {
     --mp-radius: 1.125rem;
     --mp-radius-sm: 0.75rem;
     --mp-control-h: 3.25rem;
-    width: var(--mp-width);
+    width: var(--mp-width) !important;
+    max-width: min(var(--mp-width), calc(100vw - 2rem)) !important;
     overflow: hidden;
     border: 1px solid var(--mp-border);
     border-radius: var(--mp-radius);
