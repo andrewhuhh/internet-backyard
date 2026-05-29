@@ -28,7 +28,7 @@ export function ManageRecipientsStep({
 }: ManageRecipientsStepProps) {
   return (
     <>
-      <div className="space-y-1">
+      <div className="space-y-1 pb-6">
         {recipients.length === 0 ? (
           <p className={cn("py-4 text-center", captionMutedClass)}>No recipients yet.</p>
         ) : (
@@ -49,7 +49,7 @@ export function ManageRecipientsStep({
       </div>
       <Button
         variant="ghost"
-        className={cn(primaryButtonClass, "mt-3")}
+        className={primaryButtonClass}
         type="button"
         onClick={onAddRecipient}
       >

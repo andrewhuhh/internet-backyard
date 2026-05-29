@@ -34,7 +34,7 @@ export function MiniSelect({
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger
           className={cn(
-            "min-h-13 min-w-0 w-full items-center border-0! rounded-mbp-surface! px-3 py-2.5 text-left shadow-none! will-change-[background-color] dark:bg-mbp-surface! dark:hover:bg-mbp-surface-hover!",
+            "min-h-13 min-w-0 w-full items-center border-0! rounded-mbp-surface! p-3 text-left shadow-none! will-change-[background-color] dark:bg-mbp-surface! dark:hover:bg-mbp-surface-hover!",
             controlSurfaceClass,
             "[&_svg]:size-[1em]! [&_svg]:text-mbp-muted!",
           )}

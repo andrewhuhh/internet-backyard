@@ -276,7 +276,7 @@ export function ModernBillPaymentDialog() {
           </Button>
         </div>
 
-        <div className={cn(mbpScrollClass, "flex-1 px-4 pb-4 pt-2")}>
+        <div className={cn(mbpScrollClass, "flex-1 px-4 pb-4")}>
           <AnimatePresence mode="popLayout">
             {step === "amount" ? (
               <StepMotion step="amount">

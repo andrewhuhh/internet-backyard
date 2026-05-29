@@ -116,7 +116,7 @@ export function AmountStep({
               variant="link"
               type="button"
               className={cn(
-                "mt-1 h-auto self-end px-0 py-0 text-mbp-caption leading-tight text-mbp-muted transition-colors duration-mbp hover:text-mbp-fg",
+                "mt-1 h-auto self-end px-0 py-0 text-mbp-caption leading-tight text-mbp-muted transition-colors duration-mbp hover:text-mbp-fg px-2",
               )}
               onClick={onManageRecipients}
             >
@@ -128,7 +128,7 @@ export function AmountStep({
 
       <div className="py-9 text-center">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3 items-center">
+          <div className="flex flex-col gap-2 items-center">
             <div
               className={cn("flex max-w-full min-w-0 items-baseline justify-center", amountDisplayClass)}
               style={amountFontStyle}
@@ -161,7 +161,7 @@ export function AmountStep({
               </span>
             </div>
             {exceeds ? (
-              <span className="block font-mbp-emphasis leading-tight text-mbp-danger">
+              <span className="block text-mbp-body font-mbp-emphasis leading-tight text-mbp-danger">
                 Cannot exceed {formatAmountDisplay(available)}
               </span>
             ) : (
@@ -172,7 +172,7 @@ export function AmountStep({
           </div>
           <div className="flex items-center justify-center gap-2 text-mbp-caption">
             <Button
-              variant={time === "instant" ? "secondary" : "link"}
+              variant={time === "instant" ? "secondary" : "ghost"}
               className={timeToggleClass}
               onClick={() => onTimeChange("instant")}
               type="button"
@@ -182,12 +182,12 @@ export function AmountStep({
             <Popover open={scheduleOpen} onOpenChange={onScheduleOpenChange}>
               <PopoverTrigger asChild>
                 <Button
-                  variant={time === "schedule" ? "secondary" : "link"}
+                  variant={time === "schedule" ? "secondary" : "ghost"}
                   className={timeToggleClass}
                   onClick={() => onTimeChange("schedule")}
                   type="button"
                 >
-                  {time === "schedule" ? scheduledDateLabel : "Schedule"}
+                  {scheduledDateLabel}
                 </Button>
               </PopoverTrigger>
               <PopoverContent

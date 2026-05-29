@@ -1,14 +1,12 @@
 import type { HTMLAttributes } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { addRecipientControlClass, captionMutedClass } from "./styles";
+import { addRecipientControlClass } from "./styles";
 
 export function AddRecipientField({
   id,
   label,
   value,
   error,
-  placeholder,
   inputMode,
   maxLength,
   autoComplete,
@@ -18,7 +16,6 @@ export function AddRecipientField({
   label: string;
   value: string;
   error?: string;
-  placeholder: string;
   inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
   maxLength?: number;
   autoComplete?: string;
@@ -26,9 +23,6 @@ export function AddRecipientField({
 }) {
   return (
     <div className="space-y-1">
-      <Label className={captionMutedClass} htmlFor={id}>
-        {label}
-      </Label>
       <Input
         id={id}
         name={id}
@@ -37,7 +31,7 @@ export function AddRecipientField({
         maxLength={maxLength}
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
+        placeholder={label}
         className={addRecipientControlClass}
       />
       {error ? <p className="text-mbp-caption text-mbp-danger">{error}</p> : null}

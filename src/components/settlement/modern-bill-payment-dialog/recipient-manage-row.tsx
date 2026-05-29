@@ -54,9 +54,9 @@ export function RecipientManageRow({
 
   return (
     <div className="rounded-mbp-row! bg-mbp-surface! px-3 py-2">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          <CounterpartyStatusIcon status={status} />
+          {status !== "pending_review" ? <CounterpartyStatusIcon status={status} /> : null}
           <p className="min-w-0 truncate text-mbp-body font-mbp-emphasis leading-tight text-mbp-fg">
             {name}
           </p>

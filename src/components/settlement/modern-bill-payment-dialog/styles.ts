@@ -28,7 +28,7 @@ export const captionMutedClass = "text-mbp-caption text-mbp-muted";
 export const selectItemLabelClass = "text-mbp-body leading-none text-mbp-fg";
 
 export const timeToggleClass =
-  "rounded-full px-2.5 py-1 font-mbp-emphasis text-mbp-muted transition-[color,background-color] duration-mbp will-change-[color,background-color] hover:text-mbp-fg";
+  "rounded-full px-3 py-1 font-mbp-emphasis text-mbp-muted transition-[color,background-color] duration-mbp will-change-[color,background-color] hover:text-mbp-fg";
 
 export const primaryButtonClass =
   "h-10.5 w-full rounded-mbp-surface! bg-mbp-fg! text-mbp-body font-mbp-emphasis text-mbp-inverse! transition will-change-[background-color] hover:bg-mbp-primary-hover!";
