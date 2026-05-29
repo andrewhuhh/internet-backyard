@@ -162,7 +162,7 @@ export function ModernBillPaymentDialog() {
                   )}
                   <div className="modern-payment-time-toggle mt-4">
                     <Button
-                      variant={time === "instant" ? "default" : "link"}
+                      variant={time === "instant" ? "secondary" : "link"}
                       className="modern-payment-pill"
                       onClick={() => setTime("instant")}
                       type="button"
@@ -170,7 +170,7 @@ export function ModernBillPaymentDialog() {
                       Instant
                     </Button>
                     <Button
-                      variant={time === "schedule" ? "default" : "link"}
+                      variant={time === "schedule" ? "secondary" : "link"}
                       className="modern-payment-pill"
                       onClick={() => setTime("schedule")}
                       type="button"
