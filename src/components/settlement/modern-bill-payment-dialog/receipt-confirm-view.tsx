@@ -27,7 +27,7 @@ export function ReceiptConfirmView({ receipt, rail, counterparty }: ReceiptConfi
   const amountFontStyle = amountFontSizeStyle(Math.max(amountDisplay.length, 4));
   const sentAtLabel = format(parseISO(receipt.createdAt), "MMM d, yyyy 'at' h:mm a");
   const scheduledForLabel = receipt.scheduledFor
-    ? format(parseISO(receipt.scheduledFor), "MMM d, yyyy")
+    ? format(parseISO(receipt.scheduledFor), "MMM d, yyyy 'at' h:mm a")
     : null;
   const memo = receipt.memo.trim();
 

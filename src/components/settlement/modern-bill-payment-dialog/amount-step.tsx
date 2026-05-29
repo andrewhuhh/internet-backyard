@@ -1,6 +1,10 @@
 "use client";
 
-import { format, isBefore, startOfDay } from "date-fns";
+import { isBefore, startOfDay } from "date-fns";
+import {
+  formatScheduledDateTime,
+  mergeScheduleDay,
+} from "@/lib/settlement/schedule-datetime";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,6 +29,7 @@ import {
   primaryButtonClass,
   timeToggleClass,
 } from "./styles";
+import { ScheduleTimeSelect } from "./schedule-time-select";
 import type { PaymentTime } from "./types";
 
 type AmountStepProps = {
@@ -87,7 +92,7 @@ export function AmountStep({
   const exceeds = available > 0 && amountCents > available;
   const amountFontStyle = amountFontSizeStyle(amountInput.length);
   const today = startOfDay(new Date());
-  const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
+  const scheduledDateLabel = scheduledDate ? formatScheduledDateTime(scheduledDate) : "Schedule";
   const recipientOptions = hasVisibleRecipients
     ? recipients.map((item) => ({
         value: item.id,
@@ -214,7 +219,7 @@ export function AmountStep({
               <PopoverTrigger asChild>
                 <Button
                   variant={time === "schedule" ? "secondary" : "ghost"}
-                  className={timeToggleClass}
+                  className={cn(timeToggleClass, "max-w-44 truncate")}
                   onClick={() => onTimeChange("schedule")}
                   type="button"
                 >
@@ -242,11 +247,19 @@ export function AmountStep({
                   selected={scheduledDate}
                   onSelect={(date) => {
                     if (!date) return;
-                    onScheduledDateChange(date);
+                    onScheduledDateChange(mergeScheduleDay(date, scheduledDate));
                     onTimeChange("schedule");
-                    onScheduleOpenChange(false);
                   }}
                 />
+                {scheduledDate ? (
+                  <ScheduleTimeSelect
+                    value={scheduledDate}
+                    onChange={(next) => {
+                      onScheduledDateChange(next);
+                      onTimeChange("schedule");
+                    }}
+                  />
+                ) : null}
               </PopoverContent>
             </Popover>
           </div>

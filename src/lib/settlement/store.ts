@@ -322,19 +322,13 @@ export const useSettlementStore = create<StoreState>()(
         }
 
         const scheduledForDate = options?.scheduledFor;
-        if (scheduledForDate) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const scheduledDay = new Date(scheduledForDate);
-          scheduledDay.setHours(0, 0, 0, 0);
-          if (scheduledDay < today) {
-            set({
-              step: "failed",
-              direction: 1,
-              lastError: "Scheduled date must be today or later.",
-            });
-            return;
-          }
+        if (scheduledForDate && scheduledForDate.getTime() < Date.now()) {
+          set({
+            step: "failed",
+            direction: 1,
+            lastError: "Scheduled time must be in the future.",
+          });
+          return;
         }
 
         set({ step: "submitting", direction: 1, lastError: null });
@@ -351,11 +345,7 @@ export const useSettlementStore = create<StoreState>()(
         }
 
         const scheduledForIso = scheduledForDate
-          ? (() => {
-              const day = new Date(scheduledForDate);
-              day.setHours(12, 0, 0, 0);
-              return day.toISOString();
-            })()
+          ? new Date(scheduledForDate).toISOString()
           : undefined;
 
         const receipt: SettlementReceipt = {

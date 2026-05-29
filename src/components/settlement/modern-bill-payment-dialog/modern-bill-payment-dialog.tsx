@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { format, isBefore, startOfDay } from "date-fns";
+import { isBefore } from "date-fns";
+import {
+  defaultScheduledDateTime,
+  formatScheduledDateTime,
+} from "@/lib/settlement/schedule-datetime";
 import { toast } from "sonner";
 import { AnimatePresence } from "motion/react";
 import { ArrowLeft, X } from "lucide-react";
@@ -65,7 +69,7 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<ModernStep>("amount");
   const [time, setTime] = useState<PaymentTime>("instant");
-  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(() => startOfDay(new Date()));
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(() => defaultScheduledDateTime());
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [addRecipientForm, setAddRecipientForm] = useState(EMPTY_ADD_RECIPIENT_FORM);
   const [addRecipientErrors, setAddRecipientErrors] = useState<AddRecipientErrors>({});
@@ -91,9 +95,9 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
   const exceeds = available > 0 && amount > available;
   const scheduleIsValid =
     time !== "schedule" ||
-    (scheduledDate !== undefined && !isBefore(startOfDay(scheduledDate), startOfDay(new Date())));
+    (scheduledDate !== undefined && !isBefore(scheduledDate, new Date()));
   const canContinue = Boolean(counterparty && rail && !isEmpty && !exceeds && scheduleIsValid);
-  const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
+  const scheduledDateLabel = scheduledDate ? formatScheduledDateTime(scheduledDate) : "Schedule";
 
   function openManageRecipients() {
     setPendingRemoveId(null);
@@ -260,7 +264,7 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
           setNoteOpen(false);
           setStep("amount");
           setTime("instant");
-          setScheduledDate(startOfDay(new Date()));
+          setScheduledDate(defaultScheduledDateTime());
           setScheduleOpen(false);
         }
         setOpen(nextOpen);

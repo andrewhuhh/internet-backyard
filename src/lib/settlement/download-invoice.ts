@@ -31,7 +31,7 @@ export function downloadSettlementInvoice({
 }: DownloadSettlementInvoiceInput) {
   const issuedAt = format(parseISO(receipt.createdAt), "MMMM d, yyyy 'at' h:mm a");
   const scheduledFor = receipt.scheduledFor
-    ? format(parseISO(receipt.scheduledFor), "MMMM d, yyyy")
+    ? format(parseISO(receipt.scheduledFor), "MMMM d, yyyy 'at' h:mm a")
     : null;
   const memo = receipt.memo.trim();
   const rows: Array<{ label: string; value: string }> = [
