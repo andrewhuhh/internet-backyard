@@ -12,6 +12,7 @@ import { amountDisplayClass, captionMutedClass } from "./styles";
 const receiptStatusLabel: Record<SettlementReceipt["status"], string> = {
   settled: "Sent",
   queued_review: "Pending review",
+  scheduled: "Scheduled",
   failed: "Failed",
 };
 
@@ -25,6 +26,9 @@ export function ReceiptConfirmView({ receipt, rail, counterparty }: ReceiptConfi
   const amountDisplay = formatAmountDisplay(receipt.amountCents);
   const amountFontStyle = amountFontSizeStyle(Math.max(amountDisplay.length, 4));
   const sentAtLabel = format(parseISO(receipt.createdAt), "MMM d, yyyy 'at' h:mm a");
+  const scheduledForLabel = receipt.scheduledFor
+    ? format(parseISO(receipt.scheduledFor), "MMM d, yyyy")
+    : null;
   const memo = receipt.memo.trim();
 
   return (
@@ -50,7 +54,12 @@ export function ReceiptConfirmView({ receipt, rail, counterparty }: ReceiptConfi
         {counterparty?.bankAccount ? (
           <ConfirmRow label="Bank" value={formatBankAccountDetail(counterparty.bankAccount)} />
         ) : null}
-        <ConfirmRow label="Sent" value={sentAtLabel} />
+        {scheduledForLabel ? (
+          <ConfirmRow label="Scheduled for" value={scheduledForLabel} />
+        ) : (
+          <ConfirmRow label="Sent" value={sentAtLabel} />
+        )}
+        {scheduledForLabel ? <ConfirmRow label="Created" value={sentAtLabel} /> : null}
         <ConfirmRow label="Reference" value={receipt.auditRef} />
       </div>
       {memo ? (

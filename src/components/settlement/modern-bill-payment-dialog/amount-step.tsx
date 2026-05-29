@@ -1,12 +1,13 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Counterparty, SettlementRail } from "@/lib/settlement/schema";
-import { cents } from "@/lib/settlement/store";
+import { cents, selectAccountBalanceCents, useSettlementStore } from "@/lib/settlement/store";
+import { useShallow } from "zustand/react/shallow";
 import {
   amountFontSizeStyle,
   formatAmountDisplay,
@@ -75,9 +76,17 @@ export function AmountStep({
   onScheduleOpenChange,
   onContinue,
 }: AmountStepProps) {
+  const balancesByRailId = useSettlementStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        fundingSources.map((item) => [item.id, selectAccountBalanceCents(state, item.id)]),
+      ),
+    ),
+  );
   const isEmpty = amountCents <= 0;
   const exceeds = available > 0 && amountCents > available;
   const amountFontStyle = amountFontSizeStyle(amountInput.length);
+  const today = startOfDay(new Date());
   const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
   const recipientOptions = hasVisibleRecipients
     ? recipients.map((item) => ({
@@ -113,7 +122,7 @@ export function AmountStep({
           options={fundingSources.map((item) => ({
             value: item.id,
             label: item.label,
-            amount: cents(item.availableCents),
+            amount: cents(balancesByRailId[item.id] ?? 0),
           }))}
         />
         <div className="flex min-w-0 flex-col">
@@ -220,6 +229,7 @@ export function AmountStep({
               >
                 <Calendar
                   mode="single"
+                  disabled={(date) => isBefore(startOfDay(date), today)}
                   className={calendarClass}
                   classNames={{
                     caption_label: "font-medium select-none text-sm text-mbp-fg",

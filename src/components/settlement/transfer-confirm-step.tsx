@@ -3,22 +3,23 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { formatBankAccountDetail } from "@/lib/settlement/bank-account";
-import type { Counterparty, SettlementRail } from "@/lib/settlement/schema";
+import { ConfirmRow } from "@/components/settlement/modern-bill-payment-dialog/confirm-row";
+import { amountFontSizeStyle, formatAmountDisplay } from "@/components/settlement/modern-bill-payment-dialog/amount-utils";
+import {
+  addRecipientControlClass,
+  amountDisplayClass,
+  captionMutedClass,
+  primaryButtonClass,
+} from "@/components/settlement/modern-bill-payment-dialog/styles";
+import type { SettlementRail } from "@/lib/settlement/schema";
 import { cn } from "@/lib/utils";
-import { amountFontSizeStyle, formatAmountDisplay } from "./amount-utils";
-import { ConfirmRow } from "./confirm-row";
-import { CounterpartyStatusIcon } from "./counterparty-status-icon";
-import { addRecipientControlClass, amountDisplayClass, captionMutedClass, primaryButtonClass } from "./styles";
-import type { PaymentTime } from "./types";
 
-type ConfirmStepProps = {
+type TransferConfirmStepProps = {
   amountCents: number;
   amountInputLength: number;
-  rail: SettlementRail | undefined;
-  counterparty: Counterparty | undefined;
-  time: PaymentTime;
-  scheduledDateLabel: string;
+  fromRail: SettlementRail | undefined;
+  toRail: SettlementRail | undefined;
+  needsApproval: boolean;
   memo: string;
   noteOpen: boolean;
   isSubmitting: boolean;
@@ -27,20 +28,19 @@ type ConfirmStepProps = {
   onSubmit: () => void;
 };
 
-export function ConfirmStep({
+export function TransferConfirmStep({
   amountCents,
   amountInputLength,
-  rail,
-  counterparty,
-  time,
-  scheduledDateLabel,
+  fromRail,
+  toRail,
+  needsApproval,
   memo,
   noteOpen,
   isSubmitting,
   onNoteOpenChange,
   onMemoChange,
   onSubmit,
-}: ConfirmStepProps) {
+}: TransferConfirmStepProps) {
   const amountFontStyle = amountFontSizeStyle(amountInputLength);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const showNoteField = noteOpen || memo.trim().length > 0;
@@ -60,30 +60,19 @@ export function ConfirmStep({
         </div>
       </div>
       <div className="space-y-1">
-        <ConfirmRow label="From" value={rail?.label ?? "Credit pool"} />
-        <ConfirmRow
-          label="To"
-          value={counterparty?.displayName ?? "Nova Foundry"}
-          valueLeading={
-            counterparty?.status === "verified" ? (
-              <CounterpartyStatusIcon status="verified" size="md" />
-            ) : null
-          }
-        />
-        {counterparty?.bankAccount ? (
-          <ConfirmRow label="Bank" value={formatBankAccountDetail(counterparty.bankAccount)} />
-        ) : null}
-        <ConfirmRow label="Time" value={time === "instant" ? "Instant" : scheduledDateLabel} />
+        <ConfirmRow label="From" value={fromRail?.label ?? "—"} />
+        <ConfirmRow label="To" value={toRail?.label ?? "—"} />
+        <ConfirmRow label="Time" value={needsApproval ? "Awaiting approval" : "Instant"} />
       </div>
       {showNoteField ? (
         <div className="mt-3 space-y-1">
-          <label htmlFor="modern-payment-private-note" className="sr-only">
+          <label htmlFor="transfer-memo" className="sr-only">
             Private note
           </label>
           <Textarea
             ref={noteRef}
-            id="modern-payment-private-note"
-            name="modern-payment-private-note"
+            id="transfer-memo"
+            name="transfer-memo"
             value={memo}
             maxLength={180}
             rows={3}
@@ -126,7 +115,13 @@ export function ConfirmStep({
         onClick={onSubmit}
         type="button"
       >
-        {isSubmitting ? "Submitting…" : "Submit"}
+        {isSubmitting
+          ? needsApproval
+            ? "Requesting…"
+            : "Transferring…"
+          : needsApproval
+            ? "Request transfer"
+            : "Transfer"}
       </Button>
     </>
   );

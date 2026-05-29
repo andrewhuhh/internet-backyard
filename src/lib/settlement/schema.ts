@@ -108,13 +108,26 @@ export const settlementIntentSchema = z.object({
   benchmarkQuoteId: z.string().startsWith("bench_"),
   amountCents: z.number().int().min(100, "Settlement amount must be at least $1.00."),
   currency: z.string().length(3).toUpperCase(),
-  memo: z.string().min(8, "Add a memo for audit context.").max(180),
+  memo: z.string().max(180),
   reviewMode: z.enum(["standard", "expedited", "manual_review"]),
 });
 
 export const settlementReceiptSchema = settlementIntentSchema.extend({
   id: z.string().startsWith("set_"),
-  status: z.enum(["settled", "queued_review", "failed"]),
+  status: z.enum(["settled", "queued_review", "scheduled", "failed"]),
+  scheduledFor: z.string().datetime().optional(),
+  createdAt: z.string().datetime(),
+  auditRef: z.string().min(8),
+});
+
+export const creditTransferSchema = z.object({
+  id: z.string().startsWith("xfer_"),
+  fromRailId: z.string().startsWith("rail_"),
+  toRailId: z.string().startsWith("rail_"),
+  amountCents: z.number().int().min(100, "Transfer amount must be at least $1.00."),
+  currency: z.string().length(3).toUpperCase(),
+  memo: z.string().max(180),
+  status: z.enum(["settled", "failed", "awaiting_approval"]),
   createdAt: z.string().datetime(),
   auditRef: z.string().min(8),
 });
@@ -130,3 +143,4 @@ export type UsageEvidence = z.infer<typeof usageEvidenceSchema>;
 export type BenchmarkQuote = z.infer<typeof benchmarkQuoteSchema>;
 export type SettlementIntent = z.infer<typeof settlementIntentSchema>;
 export type SettlementReceipt = z.infer<typeof settlementReceiptSchema>;
+export type CreditTransfer = z.infer<typeof creditTransferSchema>;

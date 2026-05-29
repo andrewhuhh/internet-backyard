@@ -21,6 +21,8 @@ import {
   type SettlementIntent,
   type SettlementNetwork,
   type SettlementRail,
+  creditTransferSchema,
+  type CreditTransfer,
   type SettlementReceipt,
   type UsageEvidence,
 } from "./schema";
@@ -48,6 +50,7 @@ type StoreState = {
   usageEvidence: UsageEvidence[];
   benchmarkQuotes: BenchmarkQuote[];
   receipts: SettlementReceipt[];
+  transfers: CreditTransfer[];
   draft: Draft;
   lastError: string | null;
   setScenario: (scenarioId: ScenarioId) => void;
@@ -81,7 +84,13 @@ type StoreState = {
     availableCents: number;
   }) => SettlementRail;
   validateDraft: () => { ok: true; value: Draft } | { ok: false; message: string };
-  submit: () => Promise<void>;
+  submit: (options?: { scheduledFor?: Date }) => Promise<void>;
+  transferCredit: (input: {
+    fromRailId: string;
+    toRailId: string;
+    amountCents: number;
+    memo?: string;
+  }) => Promise<{ ok: true; transfer: CreditTransfer } | { ok: false; message: string }>;
   resetFailure: () => void;
 };
 
@@ -92,7 +101,7 @@ const initialDraft: Draft = {
   benchmarkQuoteId: "bench_b200_spot",
   amountCents: 184300,
   currency: "USD",
-  memo: "Settle verified B200 eval swarm usage against benchmark context.",
+  memo: "",
   reviewMode: "standard",
 };
 
@@ -129,6 +138,7 @@ export const useSettlementStore = create<StoreState>()(
       usageEvidence: seededUsageEvidence,
       benchmarkQuotes: seededBenchmarkQuotes,
       receipts: [],
+      transfers: [],
       draft: initialDraft,
       lastError: null,
       setScenario: (scenarioId) => {
@@ -296,7 +306,7 @@ export const useSettlementStore = create<StoreState>()(
         if (!rail) return { ok: false, message: "Resolve a settlement rail before review." };
         if (counterparty.status === "blocked") return { ok: false, message: "Counterparty is blocked." };
         if (rail.status === "suspended") return { ok: false, message: "Settlement rail is suspended." };
-        if (result.data.amountCents > rail.availableCents) {
+        if (result.data.amountCents > selectAccountBalanceCents(get(), rail.id)) {
           return { ok: false, message: "Amount exceeds available rail balance." };
         }
         if (result.data.amountCents > rail.limitCents) {
@@ -304,11 +314,27 @@ export const useSettlementStore = create<StoreState>()(
         }
         return { ok: true, value: result.data };
       },
-      submit: async () => {
+      submit: async (options) => {
         const validation = get().validateDraft();
         if (!validation.ok) {
           set({ step: "failed", direction: 1, lastError: validation.message });
           return;
+        }
+
+        const scheduledForDate = options?.scheduledFor;
+        if (scheduledForDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const scheduledDay = new Date(scheduledForDate);
+          scheduledDay.setHours(0, 0, 0, 0);
+          if (scheduledDay < today) {
+            set({
+              step: "failed",
+              direction: 1,
+              lastError: "Scheduled date must be today or later.",
+            });
+            return;
+          }
         }
 
         set({ step: "submitting", direction: 1, lastError: null });
@@ -324,10 +350,23 @@ export const useSettlementStore = create<StoreState>()(
           return;
         }
 
+        const scheduledForIso = scheduledForDate
+          ? (() => {
+              const day = new Date(scheduledForDate);
+              day.setHours(12, 0, 0, 0);
+              return day.toISOString();
+            })()
+          : undefined;
+
         const receipt: SettlementReceipt = {
           ...validation.value,
           id: `set_${Date.now()}`,
-          status: validation.value.reviewMode === "manual_review" ? "queued_review" : "settled",
+          status: scheduledForIso
+            ? "scheduled"
+            : validation.value.reviewMode === "manual_review"
+              ? "queued_review"
+              : "settled",
+          scheduledFor: scheduledForIso,
           createdAt: new Date().toISOString(),
           auditRef: `IBY-${Math.random().toString(16).slice(2, 10).toUpperCase()}`,
         };
@@ -339,6 +378,72 @@ export const useSettlementStore = create<StoreState>()(
           lastError: null,
         });
       },
+      transferCredit: async (input) => {
+        const state = get();
+        const rails = selectAvailableRails(state);
+        const fromRail = rails.find((item) => item.id === input.fromRailId);
+        const toRail = rails.find((item) => item.id === input.toRailId);
+
+        if (!fromRail || !toRail) {
+          return { ok: false, message: "Select valid source and destination accounts." };
+        }
+        if (fromRail.id === toRail.id) {
+          return { ok: false, message: "Source and destination must be different accounts." };
+        }
+        if (fromRail.currency !== toRail.currency) {
+          return { ok: false, message: "Accounts must use the same currency." };
+        }
+        if (fromRail.status === "suspended" || toRail.status === "suspended") {
+          return { ok: false, message: "One or both accounts are suspended." };
+        }
+        if (!isTransferEligibleRail(fromRail)) {
+          return { ok: false, message: "Source account cannot send transfers." };
+        }
+        if (!isTransferEligibleRail(toRail)) {
+          return { ok: false, message: "Destination account cannot receive transfers." };
+        }
+
+        const parsed = creditTransferSchema
+          .omit({ id: true, status: true, createdAt: true, auditRef: true })
+          .safeParse({
+            fromRailId: input.fromRailId,
+            toRailId: input.toRailId,
+            amountCents: input.amountCents,
+            currency: fromRail.currency,
+            memo: input.memo?.trim() ?? "",
+          });
+
+        if (!parsed.success) {
+          return {
+            ok: false,
+            message: parsed.error.issues[0]?.message ?? "Transfer details are invalid.",
+          };
+        }
+
+        if (parsed.data.amountCents > selectAccountBalanceCents(state, fromRail.id)) {
+          return { ok: false, message: "Amount exceeds available balance on the source account." };
+        }
+        if (parsed.data.amountCents > fromRail.limitCents) {
+          return { ok: false, message: "Amount exceeds this account's transfer limit." };
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        const transfer: CreditTransfer = creditTransferSchema.parse({
+          ...parsed.data,
+          id: `xfer_${Date.now()}`,
+          status: transferRequiresApproval(fromRail, toRail) ? "awaiting_approval" : "settled",
+          createdAt: new Date().toISOString(),
+          auditRef: `IBY-XFER-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
+        });
+
+        set({
+          transfers: [transfer, ...get().transfers].slice(0, 24),
+          lastError: null,
+        });
+
+        return { ok: true, transfer };
+      },
       resetFailure: () => set({ step: "compose", direction: -1, lastError: null }),
     }),
     {
@@ -348,10 +453,23 @@ export const useSettlementStore = create<StoreState>()(
         hiddenCounterpartyIds: state.hiddenCounterpartyIds,
         localRails: state.localRails,
         receipts: state.receipts,
+        transfers: state.transfers,
       }),
     },
   ),
 );
+
+export function isTransferEligibleRail(rail: SettlementRail) {
+  return rail.status === "ready" || rail.status === "requires_approval";
+}
+
+export function transferRequiresApproval(fromRail: SettlementRail, toRail: SettlementRail) {
+  return fromRail.status === "requires_approval" || toRail.status === "requires_approval";
+}
+
+export function selectTransferableRails(state: StoreState) {
+  return selectAvailableRails(state).filter(isTransferEligibleRail);
+}
 
 export function isCounterpartyHidden(state: StoreState, id: string) {
   return (state.hiddenCounterpartyIds ?? []).includes(id);
@@ -422,9 +540,19 @@ export function resolveRailLabel(state: StoreState, railId: string) {
 }
 
 export function selectAccountSpentCents(state: StoreState, railId: string) {
-  return state.receipts
+  const payments = state.receipts
     .filter((receipt) => receipt.railId === railId && receipt.status === "settled")
     .reduce((sum, receipt) => sum + receipt.amountCents, 0);
+  const outbound = state.transfers
+    .filter((transfer) => transfer.fromRailId === railId && transfer.status === "settled")
+    .reduce((sum, transfer) => sum + transfer.amountCents, 0);
+  return payments + outbound;
+}
+
+export function selectAccountReceivedCents(state: StoreState, railId: string) {
+  return state.transfers
+    .filter((transfer) => transfer.toRailId === railId && transfer.status === "settled")
+    .reduce((sum, transfer) => sum + transfer.amountCents, 0);
 }
 
 export function selectAccountBalanceCents(state: StoreState, railId: string) {
@@ -432,7 +560,17 @@ export function selectAccountBalanceCents(state: StoreState, railId: string) {
     selectAvailableRails(state).find((item) => item.id === railId) ??
     selectAllRails(state).find((item) => item.id === railId);
   if (!rail) return 0;
-  return Math.max(0, rail.availableCents - selectAccountSpentCents(state, railId));
+  return Math.max(
+    0,
+    rail.availableCents - selectAccountSpentCents(state, railId) + selectAccountReceivedCents(state, railId),
+  );
+}
+
+/** Home-only aggregate view across all listed rails. */
+export const HOME_EVERYTHING_VIEW_ID = "__everything__";
+
+export function selectTotalBalanceCents(state: StoreState, railIds: string[]) {
+  return railIds.reduce((sum, railId) => sum + selectAccountBalanceCents(state, railId), 0);
 }
 
 export function cents(value: number) {

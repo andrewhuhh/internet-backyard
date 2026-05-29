@@ -1,27 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { AccountSelect } from "@/components/settlement/account-select";
 import { ModernBillPaymentDialog } from "@/components/settlement/modern-bill-payment-dialog/modern-bill-payment-dialog";
 import { PaymentHistorySection } from "@/components/settlement/payment-ledger";
+import { TransferMoneyDialog } from "@/components/settlement/transfer-money-dialog";
 import type { SettlementRail } from "@/lib/settlement/schema";
 import {
+  HOME_EVERYTHING_VIEW_ID,
   selectAccountBalanceCents,
-  selectActiveRail,
   selectAvailableRails,
+  selectTotalBalanceCents,
   useSettlementStore,
 } from "@/lib/settlement/store";
-
-function formatUsd(cents: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
-}
+import { formatUsd } from "@/lib/settlement/format";
 
 function humanizeSettlementWindow(window: string) {
   if (window.includes("instant")) return "Instant";
@@ -44,15 +38,25 @@ function accountSubtitle(rail: SettlementRail, pendingCount: number, pendingCent
 export function HomeBillingSurface() {
   const activeRailId = useSettlementStore((state) => state.draft.railId);
   const receipts = useSettlementStore((state) => state.receipts);
+  const transfers = useSettlementStore((state) => state.transfers);
   const setActiveAccount = useSettlementStore((state) => state.setActiveAccount);
   const rails = useSettlementStore(useShallow(selectAvailableRails));
-  const rail = useSettlementStore(selectActiveRail);
+  const railIds = rails.map((item) => item.id);
+  const [homeViewId, setHomeViewId] = useState(HOME_EVERYTHING_VIEW_ID);
+  const isEverythingView = homeViewId === HOME_EVERYTHING_VIEW_ID;
   const balanceCents = useSettlementStore((state) =>
-    selectAccountBalanceCents(state, state.draft.railId),
+    isEverythingView
+      ? selectTotalBalanceCents(state, railIds)
+      : selectAccountBalanceCents(state, homeViewId),
   );
-  const accountReceipts = receipts.filter((receipt) => receipt.railId === activeRailId);
-  const pendingReceipts = accountReceipts.filter((receipt) => receipt.status === "queued_review");
+  const accountReceipts = isEverythingView
+    ? receipts.filter((receipt) => railIds.includes(receipt.railId))
+    : receipts.filter((receipt) => receipt.railId === homeViewId);
+  const pendingReceipts = accountReceipts.filter(
+    (receipt) => receipt.status === "queued_review" || receipt.status === "scheduled",
+  );
   const pendingCents = pendingReceipts.reduce((sum, receipt) => sum + receipt.amountCents, 0);
+  const selectedRail = isEverythingView ? null : rails.find((item) => item.id === homeViewId);
 
   useEffect(() => {
     const firstRailId = rails[0]?.id;
@@ -61,6 +65,13 @@ export function HomeBillingSurface() {
       setActiveAccount(firstRailId);
     }
   }, [activeRailId, rails, setActiveAccount]);
+
+  function handleAccountChange(nextViewId: string) {
+    setHomeViewId(nextViewId);
+    if (nextViewId !== HOME_EVERYTHING_VIEW_ID) {
+      setActiveAccount(nextViewId);
+    }
+  }
 
   if (rails.length === 0) {
     return (
@@ -71,31 +82,74 @@ export function HomeBillingSurface() {
   }
 
   return (
-    <div className="flex w-full max-w-sm flex-col gap-8 mt-[30vh]">
+    <div className="flex w-full max-w-sm flex-col gap-8 mt-[20vh]">
       <header className="space-y-8 text-center">
         <div className="flex justify-center">
-          <AccountSelect value={activeRailId} rails={rails} onValueChange={setActiveAccount} />
+          <AccountSelect
+            value={homeViewId}
+            rails={rails}
+            includeEverythingOption
+            onValueChange={handleAccountChange}
+          />
         </div>
         <div className="space-y-2">
-          <p className="text-6xl font-semibold tracking-tight tabular-nums">{formatUsd(balanceCents)}</p>
-          {rail ? (
+          <p className="text-6xl font-semibold tracking-tight tabular-nums">
+            {formatUsd(balanceCents)}
+            {isEverythingView ? (
+              <span className="ml-2 text-2xl font-medium text-muted-foreground">USD</span>
+            ) : null}
+          </p>
+          {isEverythingView ? (
             <p className="text-sm text-muted-foreground">
-              {accountSubtitle(rail, pendingReceipts.length, pendingCents)}
+              {pendingReceipts.length > 0
+                ? `${pendingReceipts.length} pending ${pendingReceipts.length === 1 ? "payment" : "payments"} · ${formatUsd(pendingCents)}`
+                : `${rails.length} accounts`}
+            </p>
+          ) : selectedRail ? (
+            <p className="text-sm text-muted-foreground">
+              {accountSubtitle(selectedRail, pendingReceipts.length, pendingCents)}
             </p>
           ) : null}
         </div>
    
       </header>
 
-      <ModernBillPaymentDialog
-        trigger={
-          <Button type="button" className="h-11 w-full rounded-xl text-base font-medium">
-            Send money
-          </Button>
-        }
-      />
+      <div className="flex flex-col gap-2">
+        <ModernBillPaymentDialog
+          trigger={
+            <Button type="button" className="h-11 w-full rounded-xl text-base font-medium">
+              Send money
+            </Button>
+          }
+        />
+        <TransferMoneyDialog
+          defaultFromRailId={isEverythingView ? activeRailId : homeViewId}
+          trigger={
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full rounded-xl text-base font-medium"
+            >
+              Transfer money
+            </Button>
+          }
+        />
+      </div>
 
-      {accountReceipts.length > 0 ? <PaymentHistorySection railId={activeRailId} /> : null}
+      {accountReceipts.length > 0 ||
+      (isEverythingView
+        ? transfers.some(
+            (transfer) =>
+              railIds.includes(transfer.fromRailId) || railIds.includes(transfer.toRailId),
+          )
+        : transfers.some(
+            (transfer) => transfer.fromRailId === homeViewId || transfer.toRailId === homeViewId,
+          )) ? (
+        <PaymentHistorySection
+          railId={isEverythingView ? HOME_EVERYTHING_VIEW_ID : homeViewId}
+          railIds={isEverythingView ? railIds : undefined}
+        />
+      ) : null}
     </div>
   );
 }

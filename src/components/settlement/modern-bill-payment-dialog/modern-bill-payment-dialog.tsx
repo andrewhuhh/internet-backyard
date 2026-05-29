@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { AnimatePresence } from "motion/react";
 import { ArrowLeft, X } from "lucide-react";
@@ -16,6 +16,7 @@ import type { Counterparty } from "@/lib/settlement/schema";
 import {
   cents,
   isCounterpartyHidden,
+  selectAccountBalanceCents,
   selectAvailableCounterparties,
   selectAvailableRails,
   selectManageableCounterparties,
@@ -32,7 +33,6 @@ import {
   validateAddRecipientForm,
 } from "./add-recipient-validation";
 import {
-  BILL_PAYMENT_DEFAULT_MEMO,
   DEFAULT_ADD_RECIPIENT_SECTIONS,
   EMPTY_ADD_RECIPIENT_FORM,
 } from "./constants";
@@ -65,7 +65,7 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<ModernStep>("amount");
   const [time, setTime] = useState<PaymentTime>("instant");
-  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(new Date(2026, 4, 29));
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(() => startOfDay(new Date()));
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [addRecipientForm, setAddRecipientForm] = useState(EMPTY_ADD_RECIPIENT_FORM);
   const [addRecipientErrors, setAddRecipientErrors] = useState<AddRecipientErrors>({});
@@ -85,11 +85,14 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
     manageableRecipients.length > 0 && recipients.length === 0;
   const fundingSources = selectAvailableRails(state);
   const { counterparty, rail } = selectResolvedDependencies(state);
-  const available = rail?.availableCents ?? 0;
+  const available = selectAccountBalanceCents(state, state.draft.railId);
   const amount = state.draft.amountCents;
   const isEmpty = amount <= 0;
   const exceeds = available > 0 && amount > available;
-  const canContinue = Boolean(counterparty && rail && !isEmpty && !exceeds);
+  const scheduleIsValid =
+    time !== "schedule" ||
+    (scheduledDate !== undefined && !isBefore(startOfDay(scheduledDate), startOfDay(new Date())));
+  const canContinue = Boolean(counterparty && rail && !isEmpty && !exceeds && scheduleIsValid);
   const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
 
   function openManageRecipients() {
@@ -180,24 +183,27 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
       return;
     }
 
-    const trimmedMemo = state.draft.memo.trim();
-    if (trimmedMemo.length < 8) {
-      state.updateDraft({ memo: BILL_PAYMENT_DEFAULT_MEMO });
-    }
-
     setIsSubmittingPayment(true);
     const toastId = toast.loading("Submitting bill payment…");
 
     try {
-      await state.submit();
+      const isScheduled = time === "schedule" && scheduledDate;
+      await state.submit(isScheduled ? { scheduledFor: scheduledDate } : undefined);
       const result = useSettlementStore.getState();
 
       if (result.step === "success") {
         const payee = counterparty?.displayName ?? "recipient";
-        toast.success("Payment submitted", {
-          id: toastId,
-          description: `${cents(amount)} sent to ${payee}`,
-        });
+        if (isScheduled) {
+          toast.success("Payment scheduled", {
+            id: toastId,
+            description: `${cents(amount)} to ${payee} on ${scheduledDateLabel}`,
+          });
+        } else {
+          toast.success("Payment submitted", {
+            id: toastId,
+            description: `${cents(amount)} sent to ${payee}`,
+          });
+        }
         setOpen(false);
         return;
       }
@@ -219,7 +225,13 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
       setStep(addRecipientReturnStep);
       return;
     }
-    if (step === "confirm" || step === "manageRecipients") {
+    if (step === "confirm") {
+      setPendingRemoveId(null);
+      setNoteOpen(false);
+      setStep("amount");
+      return;
+    }
+    if (step === "manageRecipients") {
       setPendingRemoveId(null);
       setStep("amount");
       return;
@@ -248,6 +260,7 @@ export function ModernBillPaymentDialog({ trigger }: ModernBillPaymentDialogProp
           setNoteOpen(false);
           setStep("amount");
           setTime("instant");
+          setScheduledDate(startOfDay(new Date()));
           setScheduleOpen(false);
         }
         setOpen(nextOpen);

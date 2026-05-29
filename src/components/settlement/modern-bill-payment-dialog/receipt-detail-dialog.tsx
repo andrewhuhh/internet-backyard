@@ -1,12 +1,13 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { downloadSettlementInvoice } from "@/lib/settlement/download-invoice";
 import type { SettlementReceipt } from "@/lib/settlement/schema";
 import {
   selectAllCounterparties,
@@ -15,7 +16,13 @@ import {
 } from "@/lib/settlement/store";
 import { cn } from "@/lib/utils";
 import { ReceiptConfirmView } from "./receipt-confirm-view";
-import { captionMutedClass, iconButtonClass, mbpScrollClass, shellClass } from "./styles";
+import {
+  captionMutedClass,
+  iconButtonClass,
+  mbpScrollClass,
+  primaryButtonClass,
+  shellClass,
+} from "./styles";
 
 type ReceiptDetailDialogProps = {
   receipt: SettlementReceipt | null;
@@ -58,6 +65,22 @@ export function ReceiptDetailDialog({ receipt, open, onOpenChange }: ReceiptDeta
           {receipt ? (
             <ReceiptConfirmView receipt={receipt} rail={rail} counterparty={counterparty} />
           ) : null}
+        </div>
+
+        <div className="shrink-0 border-t border-mbp-border-subtle px-4 py-3">
+          <Button
+            variant="ghost"
+            type="button"
+            disabled={!receipt}
+            className={cn(primaryButtonClass, "gap-2")}
+            onClick={() => {
+              if (!receipt) return;
+              downloadSettlementInvoice({ receipt, rail, counterparty });
+            }}
+          >
+            <Download className="size-4" aria-hidden />
+            Download invoice
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
