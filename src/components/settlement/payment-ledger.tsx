@@ -3,6 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { ReceiptDetailDialog } from "@/components/settlement/modern-bill-payment-dialog/receipt-detail-dialog";
+import { TransferDetailDialog } from "@/components/settlement/modern-bill-payment-dialog/transfer-detail-dialog";
 import type { Counterparty, CreditTransfer, SettlementReceipt } from "@/lib/settlement/schema";
 import { formatUsd } from "@/lib/settlement/format";
 import {
@@ -106,6 +107,7 @@ const subscribeNoop = () => () => {};
 export function PaymentHistorySection({ railId, railIds }: PaymentHistorySectionProps) {
   const isEverythingView = railId === HOME_EVERYTHING_VIEW_ID;
   const [selectedReceipt, setSelectedReceipt] = useState<SettlementReceipt | null>(null);
+  const [selectedTransfer, setSelectedTransfer] = useState<CreditTransfer | null>(null);
   const hydrated = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const receipts = useSettlementStore((state) => state.receipts);
   const transfers = useSettlementStore((state) => state.transfers);
@@ -239,6 +241,7 @@ export function PaymentHistorySection({ railId, railIds }: PaymentHistorySection
                           : `-${formatUsd(transfer.amountCents)}`
                     }
                     mutedAmount={isPendingApproval}
+                    onClick={() => setSelectedTransfer(transfer)}
                   />
                 );
               })}
@@ -252,6 +255,15 @@ export function PaymentHistorySection({ railId, railIds }: PaymentHistorySection
         onOpenChange={(open) => {
           if (!open) {
             setSelectedReceipt(null);
+          }
+        }}
+      />
+      <TransferDetailDialog
+        transfer={selectedTransfer}
+        open={selectedTransfer !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTransfer(null);
           }
         }}
       />
