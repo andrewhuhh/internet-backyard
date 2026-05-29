@@ -55,7 +55,7 @@ export function AccountSelect({
       >
         <SelectValue placeholder="Select account">
           {isEverythingView
-            ? "Everything"
+            ? "Everything (USD)"
             : selected
               ? `${selected.label} (${selected.currency})`
               : "Select account"}
@@ -65,7 +65,7 @@ export function AccountSelect({
         {includeEverythingOption ? (
           <SelectItem value={HOME_EVERYTHING_VIEW_ID}>
             <div className="flex flex-col items-start gap-0.5 py-0.5">
-              <span className="font-medium leading-tight">Everything</span>
+              <span className="font-medium leading-tight">Everything (USD)</span>
               <span className="text-xs text-muted-foreground">
                 {formatUsd(totalBalanceCents)} available
               </span>

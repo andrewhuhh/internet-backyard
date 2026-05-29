@@ -95,9 +95,6 @@ export function HomeBillingSurface() {
         <div className="space-y-2">
           <p className="text-6xl font-semibold tracking-tight tabular-nums">
             {formatUsd(balanceCents)}
-            {isEverythingView ? (
-              <span className="ml-2 text-2xl font-medium text-muted-foreground">USD</span>
-            ) : null}
           </p>
           {isEverythingView ? (
             <p className="text-sm text-muted-foreground">
