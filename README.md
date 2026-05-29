@@ -18,11 +18,8 @@ npm run lint
 npm run build
 ```
 
-## Pages
+## App
 
-- `/` - prototype index
-- `/brief` - project framing and product context
-- `/explorations` - visual direction placeholders
-- `/primitive` - future transfer dialog primitive
+The prototype runs at `/` — the bill payment dialog (`ModernBillPaymentDialog`).
 
 See `goal.md` for the full product goal and evaluation criteria.

@@ -1,0 +1,238 @@
+"use client";
+
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import type { Counterparty, SettlementRail } from "@/lib/settlement/schema";
+import { cents } from "@/lib/settlement/store";
+import {
+  amountFontSizeStyle,
+  formatAmountDisplay,
+  formatAmountInput,
+  parseAmountInput,
+} from "./amount-utils";
+import { SELECT_ADD_RECIPIENT_VALUE } from "./constants";
+import { MiniSelect } from "./mini-select";
+import {
+  amountDisplayClass,
+  calendarClass,
+  portalSurfaceClass,
+  primaryButtonClass,
+  timeToggleClass,
+} from "./styles";
+import type { PaymentTime } from "./types";
+
+type AmountStepProps = {
+  railId: string;
+  counterpartyId: string;
+  fundingSources: SettlementRail[];
+  recipients: Counterparty[];
+  hasRecipients: boolean;
+  amountInput: string;
+  amountCents: number;
+  available: number;
+  canContinue: boolean;
+  time: PaymentTime;
+  scheduledDate: Date | undefined;
+  scheduleOpen: boolean;
+  onRailChange: (railId: string) => void;
+  onCounterpartyChange: (counterpartyId: string) => void;
+  onAddRecipient: () => void;
+  onManageRecipients: () => void;
+  onAmountInputChange: (formatted: string, cents: number) => void;
+  onTimeChange: (time: PaymentTime) => void;
+  onScheduledDateChange: (date: Date) => void;
+  onScheduleOpenChange: (open: boolean) => void;
+  onContinue: () => void;
+};
+
+export function AmountStep({
+  railId,
+  counterpartyId,
+  fundingSources,
+  recipients,
+  hasRecipients,
+  amountInput,
+  amountCents,
+  available,
+  canContinue,
+  time,
+  scheduledDate,
+  scheduleOpen,
+  onRailChange,
+  onCounterpartyChange,
+  onAddRecipient,
+  onManageRecipients,
+  onAmountInputChange,
+  onTimeChange,
+  onScheduledDateChange,
+  onScheduleOpenChange,
+  onContinue,
+}: AmountStepProps) {
+  const isEmpty = amountCents <= 0;
+  const exceeds = available > 0 && amountCents > available;
+  const amountFontStyle = amountFontSizeStyle(amountInput.length);
+  const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <MiniSelect
+          label="From"
+          value={railId}
+          placeholder="Select source"
+          onValueChange={onRailChange}
+          options={fundingSources.map((item) => ({
+            value: item.id,
+            label: item.label,
+            amount: cents(item.availableCents),
+          }))}
+        />
+        <div className="flex min-w-0 flex-col">
+          <MiniSelect
+            label="To"
+            value={hasRecipients ? counterpartyId : ""}
+            placeholder={hasRecipients ? "Select recipient" : "Add recipient"}
+            onValueChange={(next) => {
+              if (next === SELECT_ADD_RECIPIENT_VALUE) {
+                onAddRecipient();
+                return;
+              }
+              onCounterpartyChange(next);
+            }}
+            options={
+              hasRecipients
+                ? recipients.map((item) => ({
+                    value: item.id,
+                    label: item.displayName,
+                  }))
+                : [{ value: SELECT_ADD_RECIPIENT_VALUE, label: "Add recipient" }]
+            }
+          />
+          {hasRecipients ? (
+            <Button
+              variant="link"
+              type="button"
+              className={cn(
+                "mt-1 h-auto self-end px-0 py-0 text-mbp-caption leading-tight text-mbp-muted transition-colors duration-mbp hover:text-mbp-fg",
+              )}
+              onClick={onManageRecipients}
+            >
+              Add/manage
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="py-9 text-center">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 items-center">
+            <div
+              className={cn("flex max-w-full min-w-0 items-baseline justify-center", amountDisplayClass)}
+              style={amountFontStyle}
+            >
+              <span className={cn(isEmpty && "text-mbp-placeholder")}>$</span>
+              <input
+                id="modern-payment-amount"
+                name="modern-payment-amount"
+                aria-label="Payment amount"
+                placeholder="0"
+                className={cn(
+                  "w-auto max-w-full bg-transparent text-center outline-none field-sizing-content placeholder:text-mbp-placeholder",
+                  amountDisplayClass,
+                  isEmpty && "min-w-[1ch] text-mbp-placeholder",
+                )}
+                inputMode="decimal"
+                value={amountInput}
+                onChange={(event) => {
+                  const formatted = formatAmountInput(event.target.value);
+                  onAmountInputChange(formatted, parseAmountInput(formatted));
+                }}
+              />
+              <span
+                className={cn(
+                  "p-0.5 text-[0.34em] font-mbp-emphasis",
+                  isEmpty && "text-mbp-placeholder",
+                )}
+              >
+                USD
+              </span>
+            </div>
+            {exceeds ? (
+              <span className="block font-mbp-emphasis leading-tight text-mbp-danger">
+                Cannot exceed {formatAmountDisplay(available)}
+              </span>
+            ) : (
+              <span className="block text-mbp-body leading-tight text-mbp-muted">
+                {formatAmountDisplay(available)} available
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-2 text-mbp-caption">
+            <Button
+              variant={time === "instant" ? "secondary" : "link"}
+              className={timeToggleClass}
+              onClick={() => onTimeChange("instant")}
+              type="button"
+            >
+              Instant
+            </Button>
+            <Popover open={scheduleOpen} onOpenChange={onScheduleOpenChange}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={time === "schedule" ? "secondary" : "link"}
+                  className={timeToggleClass}
+                  onClick={() => onTimeChange("schedule")}
+                  type="button"
+                >
+                  {time === "schedule" ? scheduledDateLabel : "Schedule"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="center"
+                side="top"
+                sideOffset={10}
+                className={cn(portalSurfaceClass, "w-fit! min-w-0 p-1.5!")}
+              >
+                <Calendar
+                  mode="single"
+                  className={calendarClass}
+                  classNames={{
+                    caption_label: "font-medium select-none text-sm text-mbp-fg",
+                    weekday:
+                      "flex-1 rounded-(--cell-radius) text-mbp-caption font-normal text-mbp-muted select-none",
+                    today:
+                      "rounded-(--cell-radius) bg-mbp-surface text-mbp-fg data-[selected=true]:rounded-none",
+                    outside: "text-mbp-muted aria-selected:text-mbp-muted",
+                  }}
+                  selected={scheduledDate}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    onScheduledDateChange(date);
+                    onTimeChange("schedule");
+                    onScheduleOpenChange(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </div>
+
+      <Button
+        variant="ghost"
+        className={cn(
+          "h-10.5 w-full rounded-mbp-surface! text-mbp-body font-mbp-emphasis transition",
+          canContinue ? primaryButtonClass : "bg-mbp-disabled! text-mbp-disabled-fg!",
+        )}
+        disabled={!canContinue}
+        onClick={onContinue}
+        type="button"
+      >
+        Continue
+      </Button>
+    </>
+  );
+}
