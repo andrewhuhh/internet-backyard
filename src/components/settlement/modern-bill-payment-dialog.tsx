@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { format } from "date-fns";
 import { ArrowLeft, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -35,7 +38,8 @@ export function ModernBillPaymentDialog() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<ModernStep>("amount");
   const [time, setTime] = useState<PaymentTime>("instant");
-  const [scheduledDate, setScheduledDate] = useState("2026-05-29");
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(new Date(2026, 4, 29));
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const state = useSettlementStore();
   const recipients = selectAvailableCounterparties(state);
   const fundingSources = selectAvailableRails(state);
@@ -55,6 +59,7 @@ export function ModernBillPaymentDialog() {
   }, [amount]);
   const amountDisplay = amount > 0 ? (amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0";
   const amountInputWidth = `${Math.max(1, amountDisplay.length) + 0.5}ch`;
+  const scheduledDateLabel = scheduledDate ? format(scheduledDate, "MMM d") : "Schedule";
 
   return (
     <Dialog
@@ -64,6 +69,7 @@ export function ModernBillPaymentDialog() {
           state.updateDraft({ amountCents: 0 });
           setStep("amount");
           setTime("instant");
+          setScheduleOpen(false);
         }
         setOpen(nextOpen);
       }}
@@ -170,25 +176,31 @@ export function ModernBillPaymentDialog() {
                     >
                       Instant
                     </Button>
-                    <Button
-                      variant={time === "schedule" ? "secondary" : "link"}
-                      className="modern-payment-pill"
-                      onClick={() => setTime("schedule")}
-                      type="button"
-                    >
-                      Schedule
-                    </Button>
+                    <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={time === "schedule" ? "secondary" : "link"}
+                          className="modern-payment-pill"
+                          onClick={() => setTime("schedule")}
+                          type="button"
+                        >
+                          {time === "schedule" ? scheduledDateLabel : "Schedule"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="center" className="modern-payment-calendar-popover">
+                        <Calendar
+                          mode="single"
+                          selected={scheduledDate}
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setScheduledDate(date);
+                            setTime("schedule");
+                            setScheduleOpen(false);
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                  {time === "schedule" && (
-                    <input
-                      aria-label="Scheduled payment date"
-                      className="modern-payment-date modern-payment-meta mx-auto mt-3"
-                      name="modern-payment-scheduled-date"
-                      onChange={(event) => setScheduledDate(event.target.value)}
-                      type="date"
-                      value={scheduledDate}
-                    />
-                  )}
                 </div>
 
                 <Button
@@ -223,7 +235,7 @@ export function ModernBillPaymentDialog() {
                 <div className="space-y-2">
                   <ConfirmRow label="From" value={rail?.label ?? "Credit pool"} />
                   <ConfirmRow label="To" value={counterparty?.displayName ?? "Nova Foundry"} verified />
-                  <ConfirmRow label="Time" value={time === "instant" ? "Instant" : scheduledDate} />
+                  <ConfirmRow label="Time" value={time === "instant" ? "Instant" : scheduledDateLabel} />
                 </div>
                 <Button variant="link" className="modern-payment-note-action" type="button">
                   + Add a private note
