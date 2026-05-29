@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { format } from "date-fns";
-import { ArrowLeft, CheckCircle2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, CircleDollarSign, Clock3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -124,7 +124,8 @@ export function ModernBillPaymentDialog() {
                     options={fundingSources.map((item) => ({
                       value: item.id,
                       label: item.label,
-                      meta: cents(item.availableCents),
+                      amount: cents(item.availableCents),
+                      status: item.status,
                     }))}
                   />
                   <MiniSelect
@@ -136,7 +137,7 @@ export function ModernBillPaymentDialog() {
                     options={recipients.map((item) => ({
                       value: item.id,
                       label: item.displayName,
-                      meta: item.status.replaceAll("_", " "),
+                      status: item.status,
                     }))}
                   />
                 </div>
@@ -275,7 +276,7 @@ function MiniSelect({
   label: string;
   value: string;
   placeholder: string;
-  options: Array<{ value: string; label: string; meta?: string }>;
+  options: Array<{ value: string; label: string; amount?: string; status?: string }>;
   onValueChange: (value: string) => void;
   verified?: boolean;
 }) {
@@ -302,10 +303,20 @@ function MiniSelect({
       </SelectTrigger>
       <SelectContent align="start" className="modern-payment-popover">
         {options.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
+          <SelectItem key={item.value} value={item.value} className="modern-payment-option-item">
             <span className="modern-payment-option-row">
-              <span>{item.label}</span>
-              {item.meta && <span className="modern-payment-meta">{item.meta}</span>}
+              <span className="modern-payment-option-label">{item.label}</span>
+              {(item.amount || item.status) && (
+                <span className="modern-payment-option-meta">
+                  {item.amount && (
+                    <span className="modern-payment-money-meta">
+                      <CircleDollarSign className="modern-payment-inline-icon" />
+                      {item.amount}
+                    </span>
+                  )}
+                  {item.status && <StatusIcon status={item.status} />}
+                </span>
+              )}
             </span>
           </SelectItem>
         ))}
@@ -322,6 +333,24 @@ function sizeByCharacterCount(
   if (count > 8) return sizes.small;
   if (count > 6) return sizes.medium;
   return sizes.base;
+}
+
+function StatusIcon({ status }: { status: string }) {
+  const normalizedStatus = status.replaceAll("_", " ");
+
+  if (status === "verified" || status === "ready") {
+    return <CheckCircle2 className="modern-payment-status-icon" aria-label={normalizedStatus} />;
+  }
+
+  if (status === "pending_review" || status === "requires_microdeposit" || status === "requires_approval") {
+    return <Clock3 className="modern-payment-status-icon" aria-label={normalizedStatus} />;
+  }
+
+  if (status === "blocked" || status === "suspended") {
+    return <Ban className="modern-payment-status-icon modern-payment-status-danger" aria-label={normalizedStatus} />;
+  }
+
+  return <AlertTriangle className="modern-payment-status-icon modern-payment-status-warning" aria-label={normalizedStatus} />;
 }
 
 function ConfirmRow({ label, value, verified = false }: { label: string; value: string; verified?: boolean }) {

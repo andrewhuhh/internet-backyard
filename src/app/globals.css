@@ -396,9 +396,28 @@ a {
   }
 
   .modern-payment-inline-icon {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 1em;
+    height: 1em;
     color: var(--mp-muted);
+  }
+
+  .modern-payment-status-icon {
+    width: 1em;
+    height: 1em;
+    color: var(--mp-muted);
+  }
+
+  .modern-payment-status-warning {
+    color: var(--mp-muted);
+  }
+
+  .modern-payment-status-danger {
+    color: var(--mp-danger);
+  }
+
+  .modern-payment-select-trigger svg {
+    width: 1em !important;
+    height: 1em !important;
   }
 
   .modern-payment-select-value-row {
@@ -421,6 +440,39 @@ a {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    line-height: 1.15;
+  }
+
+  .modern-payment-option-item {
+    min-height: var(--mp-control-h);
+    border-radius: var(--mp-radius-sm);
+    padding: 0.625rem 2rem 0.625rem 0.75rem !important;
+  }
+
+  .modern-payment-option-label {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--mp-text);
+    font-size: var(--mp-text-md);
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .modern-payment-option-meta {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--mp-muted);
+    font-size: var(--mp-text-md);
+    font-weight: 650;
+  }
+
+  .modern-payment-money-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   .modern-payment-confirm-head {
