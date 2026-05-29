@@ -52,6 +52,8 @@ export function ModernBillPaymentDialog() {
     if (digits >= 5) return "text-[2.35rem]";
     return "text-[2.7rem]";
   }, [amount]);
+  const amountDisplay = amount > 0 ? (amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0";
+  const amountInputWidth = `${Math.max(1, amountDisplay.length) + 0.5}ch`;
 
   return (
     <Dialog
@@ -139,12 +141,10 @@ export function ModernBillPaymentDialog() {
                       id="modern-payment-amount"
                       name="modern-payment-amount"
                       aria-label="Payment amount"
-                      className={cn(
-                        "min-w-0 flex-1 bg-transparent text-center font-semibold tracking-tight outline-none",
-                        isEmpty && "text-[#7f7f7f]",
-                      )}
+                      className={cn("min-w-[1ch] max-w-[9ch] bg-transparent text-center font-semibold tracking-tight outline-none", isEmpty && "text-[#7f7f7f]")}
                       inputMode="decimal"
-                      value={amount > 0 ? (amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0"}
+                      style={{ width: amountInputWidth }}
+                      value={amountDisplay}
                       onChange={(event) => {
                         const numeric = Number(event.target.value.replace(/,/g, ""));
                         state.updateDraft({ amountCents: Number.isFinite(numeric) ? Math.round(numeric * 100) : 0 });
