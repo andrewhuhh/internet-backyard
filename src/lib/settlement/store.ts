@@ -15,9 +15,11 @@ import {
   settlementRailSchema,
   type BenchmarkQuote,
   type Counterparty,
+  type CounterpartyBankAccount,
   type CounterpartyType,
   type RailType,
   type SettlementIntent,
+  type SettlementNetwork,
   type SettlementRail,
   type SettlementReceipt,
   type UsageEvidence,
@@ -41,6 +43,7 @@ type StoreState = {
   seededCounterparties: Counterparty[];
   seededRails: SettlementRail[];
   localCounterparties: Counterparty[];
+  hiddenCounterpartyIds: string[];
   localRails: SettlementRail[];
   usageEvidence: UsageEvidence[];
   benchmarkQuotes: BenchmarkQuote[];
@@ -53,9 +56,11 @@ type StoreState = {
   addCounterparty: (input: {
     displayName: string;
     type: CounterpartyType;
-    network: string;
+    network: SettlementNetwork;
     externalRef: string;
+    bankAccount: CounterpartyBankAccount;
   }) => Counterparty;
+  removeCounterparty: (id: string) => void;
   addRail: (input: {
     label: string;
     type: RailType;
@@ -106,6 +111,7 @@ export const useSettlementStore = create<StoreState>()(
       seededCounterparties,
       seededRails,
       localCounterparties: [],
+      hiddenCounterpartyIds: [],
       localRails: [],
       usageEvidence: seededUsageEvidence,
       benchmarkQuotes: seededBenchmarkQuotes,
@@ -137,6 +143,7 @@ export const useSettlementStore = create<StoreState>()(
           status: "pending_review",
           network: input.network,
           externalRef: input.externalRef,
+          bankAccount: input.bankAccount,
         });
 
         set({
@@ -147,6 +154,36 @@ export const useSettlementStore = create<StoreState>()(
           lastError: null,
         });
         return counterparty;
+      },
+      removeCounterparty: (id) => {
+        const current = get();
+        const isLocal = current.localCounterparties.some((item) => item.id === id);
+        const localCounterparties = isLocal
+          ? current.localCounterparties.filter((item) => item.id !== id)
+          : current.localCounterparties;
+        const hidden = current.hiddenCounterpartyIds ?? [];
+        const hiddenCounterpartyIds =
+          !isLocal && !hidden.includes(id) ? [...hidden, id] : hidden;
+
+        const nextState = {
+          ...current,
+          localCounterparties,
+          hiddenCounterpartyIds,
+        };
+        const draft =
+          current.draft.counterpartyId === id
+            ? {
+                ...current.draft,
+                counterpartyId: selectAvailableCounterparties(nextState)[0]?.id ?? "",
+              }
+            : current.draft;
+
+        set({
+          localCounterparties,
+          hiddenCounterpartyIds,
+          draft,
+          lastError: null,
+        });
       },
       addRail: (input) => {
         const rail = settlementRailSchema.parse({
@@ -232,6 +269,7 @@ export const useSettlementStore = create<StoreState>()(
       name: "internet-backyard-settlement-demo",
       partialize: (state) => ({
         localCounterparties: state.localCounterparties,
+        hiddenCounterpartyIds: state.hiddenCounterpartyIds,
         localRails: state.localRails,
         receipts: state.receipts,
       }),
@@ -241,8 +279,11 @@ export const useSettlementStore = create<StoreState>()(
 
 export function selectAvailableCounterparties(state: StoreState) {
   const availability = scenarioAvailability[state.scenarioId];
+  const hidden = new Set(state.hiddenCounterpartyIds ?? []);
   return [
-    ...state.seededCounterparties.filter((item) => availability.counterpartyIds.includes(item.id)),
+    ...state.seededCounterparties.filter(
+      (item) => availability.counterpartyIds.includes(item.id) && !hidden.has(item.id),
+    ),
     ...state.localCounterparties,
   ];
 }

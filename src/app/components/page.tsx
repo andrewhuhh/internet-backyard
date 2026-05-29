@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, Banknote, CheckCircle2, Loader2, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { SendTransferDialog } from "@/components/settlement/transfer-dialog";
-
 export default function ComponentsPage() {
   return (
     <main className="min-h-screen bg-background px-6 py-8 text-foreground sm:px-10">
@@ -129,16 +127,6 @@ export default function ComponentsPage() {
                 </div>
               </TabsContent>
             </Tabs>
-          </InventoryCard>
-
-          <InventoryCard title="Transfer dialog trigger">
-            <div className="flex items-center gap-4">
-              <SendTransferDialog />
-              <span className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground">
-                <Banknote className="size-4" />
-                production component
-              </span>
-            </div>
           </InventoryCard>
         </section>
       </div>

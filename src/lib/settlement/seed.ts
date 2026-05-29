@@ -16,8 +16,14 @@ export const seededCounterparties = counterpartySchema.array().parse([
     type: "model_provider",
     riskTier: "low",
     status: "verified",
-    network: "IBY verified vendors",
+    network: "iby_verified_vendors",
     externalRef: "vendor:NOVA-2049",
+    bankAccount: {
+      bankName: "First National",
+      routingNumber: "021000021",
+      accountNumber: "8844221901",
+      accountType: "checking",
+    },
   },
   {
     id: "cp_orchid_agents",
@@ -25,8 +31,14 @@ export const seededCounterparties = counterpartySchema.array().parse([
     type: "agent_vendor",
     riskTier: "medium",
     status: "pending_review",
-    network: "Agent task marketplace",
+    network: "agent_task_marketplace",
     externalRef: "contract:OA-17",
+    bankAccount: {
+      bankName: "Silicon Valley Bank",
+      routingNumber: "121140399",
+      accountNumber: "3301984420",
+      accountType: "checking",
+    },
   },
   {
     id: "cp_harbor_compute",
@@ -34,8 +46,14 @@ export const seededCounterparties = counterpartySchema.array().parse([
     type: "compute_market",
     riskTier: "low",
     status: "verified",
-    network: "Spot GPU desk",
+    network: "spot_gpu_desk",
     externalRef: "venue:HARBOR-B200",
+    bankAccount: {
+      bankName: "Mercury",
+      routingNumber: "084106768",
+      accountNumber: "7712048831",
+      accountType: "savings",
+    },
   },
 ] satisfies Counterparty[]);
 

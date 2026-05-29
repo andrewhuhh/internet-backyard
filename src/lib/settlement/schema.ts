@@ -37,14 +37,35 @@ export const meteringBasisSchema = z.enum([
   "hybrid",
 ]);
 
+export const settlementNetworkSchema = z.enum([
+  "iby_verified_vendors",
+  "agent_task_marketplace",
+  "spot_gpu_desk",
+]);
+
+export const bankAccountTypeSchema = z.enum(["checking", "savings"]);
+
+export const counterpartyBankAccountSchema = z.object({
+  bankName: z.string().min(2, "Enter the bank name."),
+  routingNumber: z
+    .string()
+    .regex(/^\d{9}$/, "Routing number must be 9 digits."),
+  accountNumber: z
+    .string()
+    .min(4, "Account number is too short.")
+    .max(17, "Account number is too long."),
+  accountType: bankAccountTypeSchema,
+});
+
 export const counterpartySchema = z.object({
   id: z.string().startsWith("cp_"),
   displayName: z.string().min(2),
   type: counterpartyTypeSchema,
   riskTier: z.enum(["low", "medium", "high"]),
   status: counterpartyStatusSchema,
-  network: z.string().min(2),
+  network: settlementNetworkSchema,
   externalRef: z.string().min(3),
+  bankAccount: counterpartyBankAccountSchema.optional(),
 });
 
 export const settlementRailSchema = z.object({
@@ -100,6 +121,9 @@ export const settlementReceiptSchema = settlementIntentSchema.extend({
 
 export type Counterparty = z.infer<typeof counterpartySchema>;
 export type CounterpartyType = z.infer<typeof counterpartyTypeSchema>;
+export type SettlementNetwork = z.infer<typeof settlementNetworkSchema>;
+export type BankAccountType = z.infer<typeof bankAccountTypeSchema>;
+export type CounterpartyBankAccount = z.infer<typeof counterpartyBankAccountSchema>;
 export type SettlementRail = z.infer<typeof settlementRailSchema>;
 export type RailType = z.infer<typeof railTypeSchema>;
 export type UsageEvidence = z.infer<typeof usageEvidenceSchema>;

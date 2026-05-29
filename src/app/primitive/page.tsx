@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ModernBillPaymentDialog } from "@/components/settlement/modern-bill-payment-dialog";
-import { SendTransferDialog, TransferDemoControls } from "@/components/settlement/transfer-dialog";
 
 export default function PrimitivePage() {
   return (
@@ -16,24 +15,16 @@ export default function PrimitivePage() {
               Production UI demo
             </p>
             <h1 className="mt-5 text-4xl font-semibold tracking-tight">
-              Send an AI usage transfer.
+              Pay a bill.
             </h1>
             <p className="mx-auto mt-5 max-w-md text-base leading-7 text-muted-foreground">
               The dialog handles missing recipients and funding sources without
-              leaving the transfer flow.
+              leaving the payment flow.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <SendTransferDialog />
               <ModernBillPaymentDialog />
             </div>
           </div>
-        </section>
-
-        <section className="mt-5">
-          <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            Demo scaffolding
-          </p>
-          <TransferDemoControls />
         </section>
       </div>
     </main>
