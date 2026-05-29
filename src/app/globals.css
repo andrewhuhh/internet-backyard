@@ -137,3 +137,69 @@ a {
     @apply font-sans;
   }
 }
+
+@layer components {
+  .modern-payment-dialog {
+    --mp-dialog-width: 22.5rem;
+    --mp-surface: #1c1c1c;
+    --mp-control: #262626;
+    --mp-control-hover: #2b2b2b;
+    --mp-text: #ffffff;
+    --mp-muted: #9a9a9a;
+    --mp-danger: #ff4040;
+    --mp-radius: 1.125rem;
+    --mp-control-radius: 0.75rem;
+    --mp-title-size: 0.875rem;
+    --mp-label-size: 0.8125rem;
+    --mp-body-size: 0.9375rem;
+    --mp-meta-size: 0.8125rem;
+    --mp-button-size: 0.9375rem;
+  }
+
+  .modern-payment-select-trigger {
+    min-height: 3.25rem;
+    align-items: center;
+    border: 0;
+    border-radius: var(--mp-control-radius);
+    background: var(--mp-control);
+    padding: 0.625rem 0.75rem;
+    text-align: left;
+  }
+
+  .modern-payment-select-trigger:hover {
+    background: var(--mp-control-hover);
+  }
+
+  .modern-payment-label {
+    color: var(--mp-muted);
+    font-size: var(--mp-label-size);
+    line-height: 1;
+  }
+
+  .modern-payment-value {
+    color: var(--mp-text);
+    font-size: var(--mp-body-size);
+    font-weight: 650;
+    line-height: 1.15;
+  }
+
+  .modern-payment-meta {
+    color: var(--mp-muted);
+    font-size: var(--mp-meta-size);
+    line-height: 1.25;
+  }
+
+  .modern-payment-button {
+    height: 2.625rem;
+    border-radius: 0.75rem;
+    font-size: var(--mp-button-size);
+    font-weight: 650;
+  }
+
+  .modern-payment-row {
+    min-height: 2.5rem;
+    border-radius: 0.625rem;
+    background: var(--mp-control);
+    padding: 0 0.875rem;
+  }
+}

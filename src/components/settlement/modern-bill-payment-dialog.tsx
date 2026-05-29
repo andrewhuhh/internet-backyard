@@ -72,21 +72,21 @@ export function ModernBillPaymentDialog() {
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className="w-[360px] overflow-hidden rounded-[18px] border border-white/8 bg-[#1c1c1c] p-0 text-white shadow-2xl sm:max-w-none"
+        className="modern-payment-dialog w-(--mp-dialog-width) overflow-hidden rounded-(--mp-radius) border border-white/8 bg-(--mp-surface) p-0 text-(--mp-text) shadow-2xl sm:max-w-none"
       >
         <DialogTitle className="sr-only">{step === "confirm" ? "Confirmation" : "Bill payment"}</DialogTitle>
-        <div className="flex h-11 items-center justify-between px-4 pt-2 text-[#a4a4a4]">
+        <div className="flex h-12 items-center justify-between px-4 pt-2 text-(--mp-muted)">
           <button
-            className="grid size-6 place-items-center rounded-full text-[#9c9c9c] transition hover:text-white"
+            className="grid size-7 place-items-center rounded-full text-(--mp-muted) transition hover:text-white"
             onClick={() => (step === "confirm" ? setStep("amount") : setOpen(false))}
             type="button"
             aria-label={step === "confirm" ? "Back to amount" : "Close bill payment"}
           >
-            <ArrowLeft className="size-3.5" />
+            <ArrowLeft className="size-4" />
           </button>
-          <div className="text-[12px]">{step === "confirm" ? "Confirmation" : "Bill payment"}</div>
+          <div className="text-(length:--mp-title-size)">{step === "confirm" ? "Confirmation" : "Bill payment"}</div>
           <button
-            className="grid size-6 place-items-center rounded-full text-[#d7d7d7] transition hover:text-white"
+            className="grid size-7 place-items-center rounded-full text-[#d7d7d7] transition hover:text-white"
             onClick={() => setOpen(false)}
             type="button"
             aria-label="Close"
@@ -153,15 +153,15 @@ export function ModernBillPaymentDialog() {
                     <span className="text-[0.34em] font-semibold text-white">USD</span>
                   </div>
                   {exceeds ? (
-                    <p className="mt-3 text-[13px] text-[#ff4040]">Cannot exceed {cents(available)}</p>
+                    <p className="modern-payment-meta mt-3 text-(--mp-danger)">Cannot exceed {cents(available)}</p>
                   ) : (
-                    <p className="mt-3 text-[13px] text-[#858585]">{cents(available)} available</p>
+                    <p className="modern-payment-meta mt-3">{cents(available)} available</p>
                   )}
-                  <div className="mt-4 flex items-center justify-center gap-2 text-[12px]">
+                  <div className="mt-4 flex items-center justify-center gap-2 text-(length:--mp-meta-size)">
                     <button
                       className={cn(
                         "rounded-full px-2.5 py-1 font-semibold transition",
-                        time === "instant" ? "bg-[#666] text-white" : "text-[#8f8f8f] hover:text-white",
+                        time === "instant" ? "bg-[#666] text-white" : "text-(--mp-muted) hover:text-white",
                       )}
                       onClick={() => setTime("instant")}
                       type="button"
@@ -171,7 +171,7 @@ export function ModernBillPaymentDialog() {
                     <button
                       className={cn(
                         "rounded-full px-2.5 py-1 font-semibold transition",
-                        time === "schedule" ? "bg-[#666] text-white" : "text-[#8f8f8f] hover:text-white",
+                        time === "schedule" ? "bg-[#666] text-white" : "text-(--mp-muted) hover:text-white",
                       )}
                       onClick={() => setTime("schedule")}
                       type="button"
@@ -182,7 +182,7 @@ export function ModernBillPaymentDialog() {
                   {time === "schedule" && (
                     <input
                       aria-label="Scheduled payment date"
-                      className="mx-auto mt-3 h-8 rounded-lg border border-white/10 bg-[#262626] px-3 text-[13px] text-white outline-none [color-scheme:dark]"
+                      className="modern-payment-meta mx-auto mt-3 h-9 rounded-lg border border-white/10 bg-(--mp-control) px-3 text-white outline-none [color-scheme:dark]"
                       name="modern-payment-scheduled-date"
                       onChange={(event) => setScheduledDate(event.target.value)}
                       type="date"
@@ -193,7 +193,7 @@ export function ModernBillPaymentDialog() {
 
                 <button
                   className={cn(
-                    "h-10 w-full rounded-xl text-[13px] font-semibold transition",
+                    "modern-payment-button w-full transition",
                     canContinue
                       ? "bg-white text-black hover:bg-[#e8e8e8]"
                       : "bg-[#292929] text-[#5e5e5e]",
@@ -224,11 +224,11 @@ export function ModernBillPaymentDialog() {
                   <ConfirmRow label="To" value={counterparty?.displayName ?? "Nova Foundry"} verified />
                   <ConfirmRow label="Time" value={time === "instant" ? "Instant" : scheduledDate} />
                 </div>
-                <button className="mx-auto mt-3 block text-[12px] text-[#8c8c8c]" type="button">
+                <button className="modern-payment-meta mx-auto mt-3 block" type="button">
                   + Add a private note
                 </button>
                 <button
-                  className="mt-5 h-10 w-full rounded-xl bg-white text-[13px] font-semibold text-black transition hover:bg-[#e8e8e8]"
+                  className="modern-payment-button mt-5 w-full bg-white text-black transition hover:bg-[#e8e8e8]"
                   onClick={() => {
                     void state.submit();
                     setOpen(false);
@@ -264,21 +264,21 @@ function MiniSelect({
   const selected = options.find((item) => item.value === value);
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="h-auto w-full rounded-xl border-0 bg-[#262626] px-3 py-2 text-left hover:bg-[#2b2b2b]">
+      <SelectTrigger className="modern-payment-select-trigger w-full">
         <span className="min-w-0">
-          <span className="block text-[11px] text-[#8c8c8c]">{label}</span>
-          <span className="mt-1 flex items-center gap-1 truncate text-[13px] font-semibold text-white">
+          <span className="modern-payment-label block">{label}</span>
+          <span className="modern-payment-value mt-1 flex items-center gap-1 truncate">
             <SelectValue placeholder={placeholder}>{selected?.label}</SelectValue>
             {verified && selected && <CheckCircle2 className="size-3.5 shrink-0 text-[#a6a6a6]" />}
           </span>
         </span>
       </SelectTrigger>
-      <SelectContent className="border-white/10 bg-[#242424] text-white">
+      <SelectContent align="start" className="border-white/10 bg-[#242424] text-white">
         {options.map((item) => (
           <SelectItem key={item.value} value={item.value}>
             <span className="flex w-full items-center justify-between gap-4">
               <span>{item.label}</span>
-              {item.meta && <span className="text-[12px] text-[#9a9a9a]">{item.meta}</span>}
+              {item.meta && <span className="modern-payment-meta">{item.meta}</span>}
             </span>
           </SelectItem>
         ))}
@@ -289,9 +289,9 @@ function MiniSelect({
 
 function ConfirmRow({ label, value, verified = false }: { label: string; value: string; verified?: boolean }) {
   return (
-    <div className="flex h-9 items-center justify-between rounded-lg bg-[#262626] px-3">
-      <span className="text-[12px] text-[#898989]">{label}</span>
-      <span className="flex items-center gap-1 truncate text-[12px] font-semibold">
+    <div className="modern-payment-row flex items-center justify-between">
+      <span className="modern-payment-meta">{label}</span>
+      <span className="modern-payment-value flex items-center gap-1 truncate">
         {value}
         {verified && <CheckCircle2 className="size-3.5 text-[#a6a6a6]" />}
       </span>
