@@ -77,23 +77,25 @@ export function ModernBillPaymentDialog() {
       >
         <DialogTitle className="sr-only">{step === "confirm" ? "Confirmation" : "Bill payment"}</DialogTitle>
         <div className="modern-payment-header">
-          <button
+          <Button
+            variant="link"
             className="modern-payment-icon-button"
             onClick={() => (step === "confirm" ? setStep("amount") : setOpen(false))}
             type="button"
             aria-label={step === "confirm" ? "Back to amount" : "Close bill payment"}
           >
             <ArrowLeft className="size-4" />
-          </button>
+          </Button>
           <div className="modern-payment-title">{step === "confirm" ? "Confirmation" : "Bill payment"}</div>
-          <button
+          <Button
+            variant="link"
             className="modern-payment-icon-button"
             onClick={() => setOpen(false)}
             type="button"
             aria-label="Close"
           >
             <X className="size-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="modern-payment-body">
@@ -159,7 +161,8 @@ export function ModernBillPaymentDialog() {
                     <p className="modern-payment-meta mt-3">{cents(available)} available</p>
                   )}
                   <div className="modern-payment-time-toggle mt-4">
-                    <button
+                    <Button
+                      variant="link"
                       className={cn(
                         "modern-payment-pill",
                         time === "instant" && "modern-payment-pill-active",
@@ -168,8 +171,9 @@ export function ModernBillPaymentDialog() {
                       type="button"
                     >
                       Instant
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="link"
                       className={cn(
                         "modern-payment-pill",
                         time === "schedule" && "modern-payment-pill-active",
@@ -178,7 +182,7 @@ export function ModernBillPaymentDialog() {
                       type="button"
                     >
                       Schedule
-                    </button>
+                    </Button>
                   </div>
                   {time === "schedule" && (
                     <input
@@ -192,7 +196,7 @@ export function ModernBillPaymentDialog() {
                   )}
                 </div>
 
-                <button
+                <Button
                   className={cn(
                     "modern-payment-button w-full transition",
                     canContinue
@@ -204,7 +208,7 @@ export function ModernBillPaymentDialog() {
                   type="button"
                 >
                   Continue
-                </button>
+                </Button>
               </motion.div>
             ) : (
               <motion.div
@@ -225,10 +229,10 @@ export function ModernBillPaymentDialog() {
                   <ConfirmRow label="To" value={counterparty?.displayName ?? "Nova Foundry"} verified />
                   <ConfirmRow label="Time" value={time === "instant" ? "Instant" : scheduledDate} />
                 </div>
-                <button className="modern-payment-meta mx-auto mt-3 block" type="button">
+                <Button variant="link" className="modern-payment-note-action" type="button">
                   + Add a private note
-                </button>
-                <button
+                </Button>
+                <Button
                   className="modern-payment-button modern-payment-primary mt-5 w-full transition"
                   onClick={() => {
                     void state.submit();
@@ -237,7 +241,7 @@ export function ModernBillPaymentDialog() {
                   type="button"
                 >
                   Submit
-                </button>
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>

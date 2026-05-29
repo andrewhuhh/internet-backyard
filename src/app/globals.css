@@ -357,6 +357,14 @@ a {
     background: var(--mp-action-hover);
   }
 
+  .modern-payment-note-action {
+    display: flex;
+    margin: 0.75rem auto 0;
+    color: var(--mp-muted);
+    font-size: var(--mp-text-sm);
+    line-height: 1.25;
+  }
+
   .modern-payment-disabled {
     background: var(--mp-disabled);
     color: var(--mp-disabled-text);
