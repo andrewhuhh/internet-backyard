@@ -332,11 +332,6 @@ a {
     color: var(--mp-text);
   }
 
-  .modern-payment-pill-active {
-    background: var(--mp-control-hover);
-    color: var(--mp-text);
-  }
-
   .modern-payment-date {
     height: 2.25rem;
     border: 1px solid var(--mp-border-strong);
