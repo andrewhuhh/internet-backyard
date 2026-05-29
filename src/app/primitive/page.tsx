@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ModernBillPaymentDialog } from "@/components/settlement/modern-bill-payment-dialog";
 import { SendTransferDialog, TransferDemoControls } from "@/components/settlement/transfer-dialog";
 
 export default function PrimitivePage() {
@@ -21,8 +22,9 @@ export default function PrimitivePage() {
               The dialog handles missing recipients and funding sources without
               leaving the transfer flow.
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <SendTransferDialog />
+              <ModernBillPaymentDialog />
             </div>
           </div>
         </section>
