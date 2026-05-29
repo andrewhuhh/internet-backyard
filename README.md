@@ -1,10 +1,4 @@
-# Internet Backyard
-
-Internet Backyard is a polished Next.js prototype for an AI usage settlement primitive. It explores what "send money" looks like when the recipient is an AI provider, agent vendor, workspace, or compute market participant, and the payment needs enough provenance to be auditable beyond a simple token-count invoice.
-
-The current app runs at `/` and presents a compact billing surface with an account balance, funding-source selector, payment history, and a multi-step bill-payment dialog.
-
-## What We Built
+## What it is
 
 - A mobile-sized settlement surface for sending AI billing payments from seeded funding sources.
 - A modern bill-payment dialog with amount entry, source and recipient selection, instant or scheduled timing, confirmation, private memo support, and submission feedback.
