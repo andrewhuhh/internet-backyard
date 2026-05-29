@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -59,14 +60,13 @@ export function SendTransferDialog() {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[92vh] overflow-hidden border border-border bg-background p-0 sm:max-w-xl">
-        <div className="p-5">
-          <DialogHeader className="pr-8">
+        <div className="px-5 pt-5 pb-3">
+          <DialogHeader className="gap-1 pr-8">
             <DialogTitle>{titleForStep(state.step)}</DialogTitle>
             <DialogDescription>{descriptionForStep(state.step)}</DialogDescription>
           </DialogHeader>
         </div>
-        <Separator />
-        <div className="max-h-[70vh] overflow-y-auto p-5">
+        <div className="px-5 pb-4 pt-1">
           <AnimatePresence mode="popLayout" custom={state.direction}>
             <motion.div
               key={state.step}
@@ -86,6 +86,12 @@ export function SendTransferDialog() {
             </motion.div>
           </AnimatePresence>
         </div>
+        {(state.step === "compose" || state.step === "review") && (
+          <>
+            <Separator />
+            <DialogFooterActions />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -141,9 +147,9 @@ function ComposePanel() {
   const missingFunding = fundingSources.length === 0 || !rail;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {(missingRecipient || missingFunding) && (
-        <Alert className="border-amber-300/35 bg-amber-300/10">
+        <Alert className="border-amber-300/35 bg-amber-300/10 py-2">
           <AlertCircle className="size-4" />
           <AlertDescription>
             {missingRecipient && missingFunding
@@ -157,7 +163,7 @@ function ComposePanel() {
 
       <Field label="Recipient">
         {recipients.length ? (
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <Select value={state.draft.counterpartyId} onValueChange={(counterpartyId) => state.updateDraft({ counterpartyId })}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select recipient" />
@@ -176,7 +182,7 @@ function ComposePanel() {
           <AddInline icon={<UserRound className="size-4" />} label="Add recipient" onClick={() => state.setStep("counterparty")} />
         )}
         {recipients.length > 0 && (
-          <Button variant="ghost" className="mt-2 px-0 text-muted-foreground" onClick={() => state.setStep("counterparty")}>
+          <Button variant="ghost" size="sm" className="mt-1 h-6 px-0 text-muted-foreground" onClick={() => state.setStep("counterparty")}>
             <Plus className="size-4" />
             New recipient
           </Button>
@@ -185,7 +191,7 @@ function ComposePanel() {
 
       <Field label="Funding source">
         {fundingSources.length ? (
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <Select value={state.draft.railId} onValueChange={(railId) => state.updateDraft({ railId })}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select funding source" />
@@ -204,49 +210,47 @@ function ComposePanel() {
           <AddInline icon={<Banknote className="size-4" />} label="Add funding source" onClick={() => state.setStep("rail")} />
         )}
         {fundingSources.length > 0 && (
-          <Button variant="ghost" className="mt-2 px-0 text-muted-foreground" onClick={() => state.setStep("rail")}>
+          <Button variant="ghost" size="sm" className="mt-1 h-6 px-0 text-muted-foreground" onClick={() => state.setStep("rail")}>
             <Plus className="size-4" />
             New funding source
           </Button>
         )}
       </Field>
 
-      <Field label="Usage evidence">
-        <Select value={state.draft.usageEvidenceId} onValueChange={(usageEvidenceId) => state.updateDraft({ usageEvidenceId })}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {state.usageEvidence.map((item) => (
-              <SelectItem key={item.id} value={item.id}>
-                {item.workloadName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedUsage && (
-          <QuietMeta>
-            {selectedUsage.confidence}% confidence · {selectedUsage.evidenceHash}
-          </QuietMeta>
-        )}
-      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Usage evidence">
+          <Select value={state.draft.usageEvidenceId} onValueChange={(usageEvidenceId) => state.updateDraft({ usageEvidenceId })}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {state.usageEvidence.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.workloadName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedUsage && <QuietMeta>{selectedUsage.confidence}% confidence</QuietMeta>}
+        </Field>
 
-      <Field label="Benchmark">
-        <Select value={state.draft.benchmarkQuoteId} onValueChange={(benchmarkQuoteId) => state.updateDraft({ benchmarkQuoteId })}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {compatibleQuotes.map((item) => (
-              <SelectItem key={item.id} value={item.id}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
+        <Field label="Benchmark">
+          <Select value={state.draft.benchmarkQuoteId} onValueChange={(benchmarkQuoteId) => state.updateDraft({ benchmarkQuoteId })}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {compatibleQuotes.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_90px]">
+      <div className="grid gap-3 sm:grid-cols-[1fr_90px]">
         <Field label="Amount">
           <Input
             inputMode="decimal"
@@ -261,28 +265,13 @@ function ComposePanel() {
 
       <Field label="Reference">
         <Textarea
-          className="min-h-18 resize-none"
+          className="min-h-16 resize-none"
           value={state.draft.memo}
           onChange={(event) => state.updateDraft({ memo: event.target.value })}
         />
       </Field>
 
       {!validation.ok && <p className="text-sm text-destructive">{validation.message}</p>}
-
-      <div className="flex justify-end gap-2 pt-1">
-        <Button variant="outline" onClick={() => state.updateDraft({ memo: state.draft.memo })}>
-          Cancel
-        </Button>
-        <Button
-          disabled={missingRecipient || missingFunding}
-          onClick={() => {
-            const result = state.validateDraft();
-            if (result.ok) state.setStep("review");
-          }}
-        >
-          Review transfer
-        </Button>
-      </div>
     </div>
   );
 }
@@ -382,12 +371,6 @@ function ReviewPanel() {
       <ReviewRow label="Usage" value={usage?.workloadName ?? "Missing"} />
       <ReviewRow label="Amount" value={cents(state.draft.amountCents)} badge={state.draft.currency} />
       <ReviewRow label="Reference" value={state.draft.memo} />
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" onClick={() => state.setStep("compose", -1)}>
-          Back
-        </Button>
-        <Button onClick={() => void state.submit()}>Submit transfer</Button>
-      </div>
     </div>
   );
 }
@@ -442,7 +425,7 @@ function DetourShell({ children }: { children: React.ReactNode }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <Label className="mb-2 block text-sm text-muted-foreground">{label}</Label>
+      <Label className="mb-1.5 block text-sm text-muted-foreground">{label}</Label>
       {children}
     </div>
   );
@@ -455,13 +438,50 @@ function QuietMeta({ children }: { children: React.ReactNode }) {
 function AddInline({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <button
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-amber-300/45 bg-amber-300/10 text-sm text-amber-100 transition hover:bg-amber-300/15"
+      className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-amber-300/45 bg-amber-300/10 text-sm text-amber-100 transition hover:bg-amber-300/15"
       onClick={onClick}
       type="button"
     >
       {icon}
       {label}
     </button>
+  );
+}
+
+function DialogFooterActions() {
+  const state = useSettlementStore();
+  const recipients = selectAvailableCounterparties(state);
+  const fundingSources = selectAvailableRails(state);
+  const { counterparty, rail } = selectResolvedDependencies(state);
+  const missingRecipient = recipients.length === 0 || !counterparty;
+  const missingFunding = fundingSources.length === 0 || !rail;
+
+  if (state.step === "review") {
+    return (
+      <div className="flex items-center justify-end gap-2 px-5 py-3">
+        <Button variant="outline" onClick={() => state.setStep("compose", -1)}>
+          Back
+        </Button>
+        <Button onClick={() => void state.submit()}>Submit transfer</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-2 px-5 py-3">
+      <DialogClose asChild>
+        <Button variant="outline">Cancel</Button>
+      </DialogClose>
+      <Button
+        disabled={missingRecipient || missingFunding}
+        onClick={() => {
+          const result = state.validateDraft();
+          if (result.ok) state.setStep("review");
+        }}
+      >
+        Review transfer
+      </Button>
+    </div>
   );
 }
 
