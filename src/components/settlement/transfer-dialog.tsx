@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Banknote,
   CheckCircle2,
+  CircleDollarSign,
   Loader2,
   Plus,
   UserRound,
@@ -167,21 +168,30 @@ function ComposePanel() {
         {({ id, name }) => (
           <>
         {recipients.length ? (
-          <div className="grid gap-1.5">
-            <Select value={state.draft.counterpartyId} onValueChange={(counterpartyId) => state.updateDraft({ counterpartyId })}>
-              <SelectTrigger id={id} name={name} className="w-full" aria-label="Recipient">
-                <SelectValue placeholder="Select recipient" />
-              </SelectTrigger>
-              <SelectContent>
-                {recipients.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {counterparty && <QuietMeta>{counterparty.status.replaceAll("_", " ")}</QuietMeta>}
-          </div>
+          <Select value={state.draft.counterpartyId} onValueChange={(counterpartyId) => state.updateDraft({ counterpartyId })}>
+            <SelectTrigger id={id} name={name} className="w-full" aria-label="Recipient">
+              <SelectValue placeholder="Select recipient" />
+              {counterparty && (
+                <InlineSelectMeta
+                  icon={<CheckCircle2 className="size-3.5" />}
+                  label={counterparty.status.replaceAll("_", " ")}
+                />
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              {recipients.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  <span className="flex w-full items-center justify-between gap-4">
+                    <span>{item.displayName}</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="size-3" />
+                      {item.status.replaceAll("_", " ")}
+                    </span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : (
           <AddInline icon={<UserRound className="size-4" />} label="Add recipient" onClick={() => state.setStep("counterparty")} />
         )}
@@ -199,21 +209,30 @@ function ComposePanel() {
         {({ id, name }) => (
           <>
         {fundingSources.length ? (
-          <div className="grid gap-1.5">
-            <Select value={state.draft.railId} onValueChange={(railId) => state.updateDraft({ railId })}>
-              <SelectTrigger id={id} name={name} className="w-full" aria-label="Funding source">
-                <SelectValue placeholder="Select funding source" />
-              </SelectTrigger>
-              <SelectContent>
-                {fundingSources.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {rail && <QuietMeta>{cents(rail.availableCents)} available</QuietMeta>}
-          </div>
+          <Select value={state.draft.railId} onValueChange={(railId) => state.updateDraft({ railId })}>
+            <SelectTrigger id={id} name={name} className="w-full" aria-label="Funding source">
+              <SelectValue placeholder="Select funding source" />
+              {rail && (
+                <InlineSelectMeta
+                  icon={<CircleDollarSign className="size-3.5" />}
+                  label={`${cents(rail.availableCents)} available`}
+                />
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              {fundingSources.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  <span className="flex w-full items-center justify-between gap-4">
+                    <span>{item.label}</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                      <CircleDollarSign className="size-3" />
+                      {cents(item.availableCents)}
+                    </span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : (
           <AddInline icon={<Banknote className="size-4" />} label="Add funding source" onClick={() => state.setStep("rail")} />
         )}
@@ -487,6 +506,15 @@ function Field({
 
 function QuietMeta({ children }: { children: React.ReactNode }) {
   return <p className="font-mono text-xs text-muted-foreground">{children}</p>;
+}
+
+function InlineSelectMeta({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <span className="ml-auto hidden items-center gap-1.5 rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground sm:inline-flex">
+      {icon}
+      {label}
+    </span>
+  );
 }
 
 function AddInline({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
