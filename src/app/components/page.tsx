@@ -46,9 +46,11 @@ export default function ComponentsPage() {
           <InventoryCard title="Form controls">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label className="mb-2 block">Recipient</Label>
+                <Label className="mb-2 block" htmlFor="components-recipient">
+                  Recipient
+                </Label>
                 <Select defaultValue="orchid">
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="components-recipient" name="components-recipient" className="w-full" aria-label="Recipient">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -58,12 +60,16 @@ export default function ComponentsPage() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block">Amount</Label>
-                <Input defaultValue="1843" />
+                <Label className="mb-2 block" htmlFor="components-amount">
+                  Amount
+                </Label>
+                <Input id="components-amount" name="components-amount" defaultValue="1843" />
               </div>
               <div className="sm:col-span-2">
-                <Label className="mb-2 block">Reference</Label>
-                <Textarea defaultValue="Settle verified B200 eval swarm usage." />
+                <Label className="mb-2 block" htmlFor="components-reference">
+                  Reference
+                </Label>
+                <Textarea id="components-reference" name="components-reference" defaultValue="Settle verified B200 eval swarm usage." />
               </div>
             </div>
           </InventoryCard>

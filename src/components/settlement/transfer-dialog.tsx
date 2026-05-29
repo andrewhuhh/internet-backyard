@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertCircle,
@@ -106,9 +106,11 @@ export function TransferDemoControls() {
   return (
     <div className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
       <div className="rounded-lg border border-border bg-card p-4">
-        <Label className="text-xs text-muted-foreground">Demo scenario</Label>
+        <Label className="text-xs text-muted-foreground" htmlFor="demo-scenario">
+          Demo scenario
+        </Label>
         <Select value={state.scenarioId} onValueChange={(value) => state.setScenario(value as typeof state.scenarioId)}>
-          <SelectTrigger className="mt-2 w-full">
+          <SelectTrigger id="demo-scenario" className="mt-2 w-full" aria-label="Demo scenario">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -161,11 +163,13 @@ function ComposePanel() {
         </Alert>
       )}
 
-      <Field label="Recipient">
+      <Field label="Recipient" name="recipient">
+        {({ id, name }) => (
+          <>
         {recipients.length ? (
           <div className="grid gap-1.5">
             <Select value={state.draft.counterpartyId} onValueChange={(counterpartyId) => state.updateDraft({ counterpartyId })}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={id} name={name} className="w-full" aria-label="Recipient">
                 <SelectValue placeholder="Select recipient" />
               </SelectTrigger>
               <SelectContent>
@@ -187,13 +191,17 @@ function ComposePanel() {
             New recipient
           </Button>
         )}
+          </>
+        )}
       </Field>
 
-      <Field label="Funding source">
+      <Field label="Funding source" name="funding-source">
+        {({ id, name }) => (
+          <>
         {fundingSources.length ? (
           <div className="grid gap-1.5">
             <Select value={state.draft.railId} onValueChange={(railId) => state.updateDraft({ railId })}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={id} name={name} className="w-full" aria-label="Funding source">
                 <SelectValue placeholder="Select funding source" />
               </SelectTrigger>
               <SelectContent>
@@ -215,12 +223,16 @@ function ComposePanel() {
             New funding source
           </Button>
         )}
+          </>
+        )}
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Usage evidence">
+        <Field label="Usage evidence" name="usage-evidence">
+          {({ id, name }) => (
+            <>
           <Select value={state.draft.usageEvidenceId} onValueChange={(usageEvidenceId) => state.updateDraft({ usageEvidenceId })}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger id={id} name={name} className="w-full" aria-label="Usage evidence">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -232,11 +244,14 @@ function ComposePanel() {
             </SelectContent>
           </Select>
           {selectedUsage && <QuietMeta>{selectedUsage.confidence}% confidence</QuietMeta>}
+            </>
+          )}
         </Field>
 
-        <Field label="Benchmark">
+        <Field label="Benchmark" name="benchmark">
+          {({ id, name }) => (
           <Select value={state.draft.benchmarkQuoteId} onValueChange={(benchmarkQuoteId) => state.updateDraft({ benchmarkQuoteId })}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger id={id} name={name} className="w-full" aria-label="Benchmark">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -244,31 +259,42 @@ function ComposePanel() {
                 <SelectItem key={item.id} value={item.id}>
                   {item.label}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            ))}
+          </SelectContent>
+        </Select>
+          )}
         </Field>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[1fr_90px]">
-        <Field label="Amount">
+        <Field label="Amount" name="amount">
+          {({ id, name }) => (
           <Input
+            id={id}
+            name={name}
             inputMode="decimal"
             value={(state.draft.amountCents / 100).toString()}
             onChange={(event) => state.updateDraft({ amountCents: Math.round(Number(event.target.value || 0) * 100) })}
           />
+          )}
         </Field>
-        <Field label="Currency">
-          <Input value={state.draft.currency} onChange={(event) => state.updateDraft({ currency: event.target.value.toUpperCase() })} />
+        <Field label="Currency" name="currency">
+          {({ id, name }) => (
+          <Input id={id} name={name} value={state.draft.currency} onChange={(event) => state.updateDraft({ currency: event.target.value.toUpperCase() })} />
+          )}
         </Field>
       </div>
 
-      <Field label="Reference">
+      <Field label="Reference" name="reference">
+        {({ id, name }) => (
         <Textarea
+          id={id}
+          name={name}
           className="min-h-16 resize-none"
           value={state.draft.memo}
           onChange={(event) => state.updateDraft({ memo: event.target.value })}
         />
+        )}
       </Field>
 
       {!validation.ok && <p className="text-sm text-destructive">{validation.message}</p>}
@@ -285,12 +311,15 @@ function RecipientPanel() {
 
   return (
     <DetourShell>
-      <Field label="Name">
-        <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Recipient name" />
+      <Field label="Name" name="recipient-name">
+        {({ id, name }) => (
+        <Input id={id} name={name} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Recipient name" />
+        )}
       </Field>
-      <Field label="Type">
+      <Field label="Type" name="recipient-type">
+        {({ id, name }) => (
         <Select value={type} onValueChange={(value) => setType(value as CounterpartyType)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger id={id} name={name} className="w-full" aria-label="Recipient type">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -300,12 +329,17 @@ function RecipientPanel() {
             <SelectItem value="compute_market">Compute market</SelectItem>
           </SelectContent>
         </Select>
+        )}
       </Field>
-      <Field label="Network">
-        <Input value={network} onChange={(event) => setNetwork(event.target.value)} />
+      <Field label="Network" name="recipient-network">
+        {({ id, name }) => (
+        <Input id={id} name={name} value={network} onChange={(event) => setNetwork(event.target.value)} />
+        )}
       </Field>
-      <Field label="Reference">
-        <Input value={externalRef} onChange={(event) => setExternalRef(event.target.value)} />
+      <Field label="Reference" name="recipient-reference">
+        {({ id, name }) => (
+        <Input id={id} name={name} value={externalRef} onChange={(event) => setExternalRef(event.target.value)} />
+        )}
       </Field>
       <Button className="w-full" disabled={displayName.length < 2} onClick={() => state.addCounterparty({ displayName, type, network, externalRef })}>
         Add recipient
@@ -323,12 +357,15 @@ function FundingSourcePanel() {
 
   return (
     <DetourShell>
-      <Field label="Name">
-        <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Funding source name" />
+      <Field label="Name" name="funding-source-name">
+        {({ id, name }) => (
+        <Input id={id} name={name} value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Funding source name" />
+        )}
       </Field>
-      <Field label="Type">
+      <Field label="Type" name="funding-source-type">
+        {({ id, name }) => (
         <Select value={type} onValueChange={(value) => setType(value as RailType)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger id={id} name={name} className="w-full" aria-label="Funding source type">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -339,13 +376,18 @@ function FundingSourcePanel() {
             <SelectItem value="invoice_agreement">Invoice agreement</SelectItem>
           </SelectContent>
         </Select>
+        )}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Currency">
-          <Input value={currency} onChange={(event) => setCurrency(event.target.value)} />
+        <Field label="Currency" name="funding-source-currency">
+          {({ id, name }) => (
+          <Input id={id} name={name} value={currency} onChange={(event) => setCurrency(event.target.value)} />
+          )}
         </Field>
-        <Field label="Available">
-          <Input value={available} onChange={(event) => setAvailable(event.target.value)} />
+        <Field label="Available" name="funding-source-available">
+          {({ id, name }) => (
+          <Input id={id} name={name} value={available} onChange={(event) => setAvailable(event.target.value)} />
+          )}
         </Field>
       </div>
       <Button
@@ -422,11 +464,23 @@ function DetourShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  name,
+  children,
+}: {
+  label: string;
+  name: string;
+  children: React.ReactNode | ((field: { id: string; name: string }) => React.ReactNode);
+}) {
+  const reactId = useId();
+  const id = `${name}-${reactId.replaceAll(":", "")}`;
   return (
     <div>
-      <Label className="mb-1.5 block text-sm text-muted-foreground">{label}</Label>
-      {children}
+      <Label className="mb-1.5 block text-sm text-muted-foreground" htmlFor={id}>
+        {label}
+      </Label>
+      {typeof children === "function" ? children({ id, name }) : children}
     </div>
   );
 }
