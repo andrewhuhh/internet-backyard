@@ -1,9 +1,18 @@
 import Link from "next/link";
 
 const explorations = [
-  "Market terminal",
-  "Developer console",
-  "Finance operations desk",
+  {
+    name: "Market terminal",
+    note: "Dense quote context, benchmark confidence, and variance posture.",
+  },
+  {
+    name: "Developer console",
+    note: "Evidence hashes, workload periods, IDs, and failure states stay visible.",
+  },
+  {
+    name: "Finance operations desk",
+    note: "Rail readiness, limits, balances, approval posture, and receipts.",
+  },
 ];
 
 export default function ExplorationsPage() {
@@ -17,18 +26,17 @@ export default function ExplorationsPage() {
           Design explorations
         </h1>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {explorations.map((name) => (
+          {explorations.map((item) => (
             <section
               className="min-h-64 rounded-lg border border-[#2d332d] bg-[#141814] p-5"
-              key={name}
+              key={item.name}
             >
               <p className="font-mono text-xs uppercase tracking-[0.16em] text-[#90a58c]">
                 Direction
               </p>
-              <h2 className="mt-6 text-2xl font-medium">{name}</h2>
+              <h2 className="mt-6 text-2xl font-medium">{item.name}</h2>
               <p className="mt-4 text-sm leading-6 text-[#aaa599]">
-                Placeholder for comparing visual language, density, copy, and
-                transition behavior before committing to the final primitive.
+                {item.note}
               </p>
             </section>
           ))}
