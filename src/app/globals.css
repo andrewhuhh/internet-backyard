@@ -387,11 +387,12 @@ a {
   }
 
   .modern-payment-calendar-popover {
-    width: auto;
+    width: fit-content !important;
+    min-width: 0;
     border-color: var(--mp-border-strong);
     background: var(--mp-popover);
     color: var(--mp-text);
-    padding: 0.5rem;
+    padding: 0.375rem;
   }
 
   .modern-payment-inline-icon {

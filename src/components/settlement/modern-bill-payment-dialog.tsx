@@ -187,7 +187,12 @@ export function ModernBillPaymentDialog() {
                           {time === "schedule" ? scheduledDateLabel : "Schedule"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent align="center" className="modern-payment-calendar-popover">
+                      <PopoverContent
+                        align="center"
+                        side="top"
+                        sideOffset={10}
+                        className="modern-payment-calendar-popover"
+                      >
                         <Calendar
                           mode="single"
                           selected={scheduledDate}
