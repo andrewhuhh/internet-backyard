@@ -35,7 +35,6 @@ export default function ComponentsPage() {
             <div className="flex flex-wrap gap-3">
               <Button>Primary</Button>
               <Button variant="outline">Outline</Button>
-              <Button variant="ghost">Ghost</Button>
               <Button variant="link">Link</Button>
               <Button variant="destructive">Destructive</Button>
               <Button size="icon">

@@ -182,7 +182,7 @@ function ComposePanel() {
           <AddInline icon={<UserRound className="size-4" />} label="Add recipient" onClick={() => state.setStep("counterparty")} />
         )}
         {recipients.length > 0 && (
-          <Button variant="ghost" size="sm" className="mt-1 h-6 px-0 text-muted-foreground" onClick={() => state.setStep("counterparty")}>
+          <Button variant="link" size="sm" className="mt-1 h-6" onClick={() => state.setStep("counterparty")}>
             <Plus className="size-4" />
             New recipient
           </Button>
@@ -210,7 +210,7 @@ function ComposePanel() {
           <AddInline icon={<Banknote className="size-4" />} label="Add funding source" onClick={() => state.setStep("rail")} />
         )}
         {fundingSources.length > 0 && (
-          <Button variant="ghost" size="sm" className="mt-1 h-6 px-0 text-muted-foreground" onClick={() => state.setStep("rail")}>
+          <Button variant="link" size="sm" className="mt-1 h-6" onClick={() => state.setStep("rail")}>
             <Plus className="size-4" />
             New funding source
           </Button>
@@ -413,7 +413,7 @@ function DetourShell({ children }: { children: React.ReactNode }) {
   const state = useSettlementStore();
   return (
     <div className="space-y-5">
-      <Button variant="ghost" className="px-0 text-muted-foreground" onClick={() => state.setStep("compose", -1)}>
+      <Button variant="link" onClick={() => state.setStep("compose", -1)}>
         <ArrowLeft className="size-4" />
         Back
       </Button>
