@@ -3,7 +3,7 @@
 import { useState, type HTMLAttributes, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { format } from "date-fns";
-import { ArrowLeft, ChevronDown, Trash2, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Ban, ChevronDown, CircleAlert, Clock, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -34,13 +34,13 @@ import {
 } from "@/lib/settlement/bank-account";
 import {
   SETTLEMENT_NETWORK_OPTIONS,
-  settlementNetworkLabel,
 } from "@/lib/settlement/settlement-networks";
 import {
   counterpartyBankAccountSchema,
   counterpartySchema,
   counterpartyTypeSchema,
   type BankAccountType,
+  type Counterparty,
   type CounterpartyType,
   type SettlementNetwork,
 } from "@/lib/settlement/schema";
@@ -116,6 +116,22 @@ function bankSectionHasError(errors: AddRecipientErrors) {
   return Object.values(errors.bankAccount).some(Boolean);
 }
 
+function recipientFormFromCounterparty(recipient: Counterparty): AddRecipientForm {
+  return {
+    displayName: recipient.displayName,
+    type: recipient.type,
+    network: recipient.network,
+    externalRef: recipient.externalRef,
+    bankAccount: recipient.bankAccount
+      ? { ...recipient.bankAccount }
+      : { ...EMPTY_BANK_ACCOUNT_FORM },
+  };
+}
+
+function recipientBankLabel(recipient: Counterparty): string | null {
+  return recipient.bankAccount ? formatBankAccountDetail(recipient.bankAccount) : null;
+}
+
 const COUNTERPARTY_TYPE_OPTIONS = counterpartyTypeSchema.options.map((value) => ({
   value,
   label: counterpartyTypeLabel(value),
@@ -145,6 +161,12 @@ const iconButtonClass =
 const controlSurfaceClass =
   "bg-mbp-surface hover:bg-mbp-surface-hover focus-visible:bg-mbp-surface-hover focus-visible:ring-0!";
 
+const addRecipientControlClass = cn(
+  "h-10.5 w-full rounded-mbp-surface! border-mbp-border! px-3 text-mbp-body! md:text-mbp-body! text-mbp-fg! shadow-none! focus-visible:ring-0!",
+  controlSurfaceClass,
+  "placeholder:text-mbp-placeholder",
+);
+
 const captionMutedClass = "text-mbp-caption text-mbp-muted";
 
 const selectItemLabelClass = "text-mbp-body leading-none text-mbp-fg";
@@ -170,6 +192,7 @@ export function ModernBillPaymentDialog() {
   const [addRecipientErrors, setAddRecipientErrors] = useState<AddRecipientErrors>({});
   const [addRecipientSections, setAddRecipientSections] = useState(DEFAULT_ADD_RECIPIENT_SECTIONS);
   const [addRecipientReturnStep, setAddRecipientReturnStep] = useState<AddRecipientReturnStep>("amount");
+  const [editingRecipientId, setEditingRecipientId] = useState<string | null>(null);
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
   const [amountInput, setAmountInput] = useState("");
   const state = useSettlementStore();
@@ -195,11 +218,26 @@ export function ModernBillPaymentDialog() {
     setAddRecipientErrors({});
     setAddRecipientSections({ ...DEFAULT_ADD_RECIPIENT_SECTIONS });
     setAddRecipientReturnStep(returnStep);
+    setEditingRecipientId(null);
     setPendingRemoveId(null);
     setStep("addRecipient");
   }
 
-  function confirmAddRecipient() {
+  function openEditRecipient(recipient: Counterparty, returnStep: AddRecipientReturnStep) {
+    setAddRecipientForm(recipientFormFromCounterparty(recipient));
+    setAddRecipientErrors({});
+    setAddRecipientSections({
+      vendor: true,
+      settlement: true,
+      bank: Boolean(recipient.bankAccount),
+    });
+    setAddRecipientReturnStep(returnStep);
+    setEditingRecipientId(recipient.id);
+    setPendingRemoveId(null);
+    setStep("addRecipient");
+  }
+
+  function confirmSaveRecipient() {
     const parsed = addRecipientInputSchema.safeParse({
       displayName: addRecipientForm.displayName.trim(),
       type: addRecipientForm.type,
@@ -241,11 +279,16 @@ export function ModernBillPaymentDialog() {
       return;
     }
 
-    state.addCounterparty(parsed.data);
+    if (editingRecipientId) {
+      state.updateCounterparty(editingRecipientId, parsed.data);
+    } else {
+      state.addCounterparty(parsed.data);
+    }
     setAddRecipientForm(EMPTY_ADD_RECIPIENT_FORM);
     setAddRecipientErrors({});
+    setEditingRecipientId(null);
     setPendingRemoveId(null);
-    setStep("amount");
+    setStep(addRecipientReturnStep);
   }
 
   function confirmRemoveRecipient(id: string) {
@@ -256,6 +299,7 @@ export function ModernBillPaymentDialog() {
   function goBack() {
     if (step === "addRecipient") {
       setAddRecipientErrors({});
+      setEditingRecipientId(null);
       setPendingRemoveId(null);
       setStep(addRecipientReturnStep);
       return;
@@ -274,7 +318,9 @@ export function ModernBillPaymentDialog() {
       : step === "manageRecipients"
         ? "Manage recipients"
         : step === "addRecipient"
-          ? "Add recipient"
+          ? editingRecipientId
+            ? "Edit recipient"
+            : "Add recipient"
           : "Bill payment";
 
   return (
@@ -306,7 +352,7 @@ export function ModernBillPaymentDialog() {
           >
             <ArrowLeft className="size-4" />
           </Button>
-          <div className="text-mbp-caption">{headerTitle}</div>
+          <div className="text-mbp-body">{headerTitle}</div>
           <Button
             variant="link"
             className={iconButtonClass}
@@ -339,7 +385,6 @@ export function ModernBillPaymentDialog() {
                       value: item.id,
                       label: item.label,
                       amount: cents(item.availableCents),
-                      status: item.status,
                     }))}
                   />
                   <div className="flex min-w-0 flex-col">
@@ -359,7 +404,6 @@ export function ModernBillPaymentDialog() {
                           ? recipients.map((item) => ({
                               value: item.id,
                               label: item.displayName,
-                              status: item.status,
                             }))
                           : [{ value: SELECT_ADD_RECIPIENT_VALUE, label: "Add recipient" }]
                       }
@@ -505,22 +549,10 @@ export function ModernBillPaymentDialog() {
                       <RecipientManageRow
                         key={recipient.id}
                         name={recipient.displayName}
-                        detail={
-                          recipient.bankAccount
-                            ? formatBankAccountDetail(recipient.bankAccount)
-                            : counterpartyTypeLabel(recipient.type)
-                        }
-                        title={[
-                          counterpartyTypeLabel(recipient.type),
-                          settlementNetworkLabel(recipient.network),
-                          recipient.bankAccount
-                            ? formatBankAccountDetail(recipient.bankAccount)
-                            : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
+                        bankLabel={recipientBankLabel(recipient)}
                         status={recipient.status}
                         pending={pendingRemoveId === recipient.id}
+                        onEdit={() => openEditRecipient(recipient, "manageRecipients")}
                         onRequestRemove={() => setPendingRemoveId(recipient.id)}
                         onCancelRemove={() => setPendingRemoveId(null)}
                         onConfirmRemove={() => confirmRemoveRecipient(recipient.id)}
@@ -546,7 +578,7 @@ export function ModernBillPaymentDialog() {
                 exit={{ opacity: 0, x: 14, filter: "blur(2px)" }}
                 transition={motionTransition}
               >
-                <div className="space-y-2 pb-9">
+                <div className="space-y-4 pb-9">
                   <AddRecipientFormSection
                     title="Vendor"
                     open={addRecipientSections.vendor}
@@ -586,10 +618,7 @@ export function ModernBillPaymentDialog() {
                     >
                       <SelectTrigger
                         id="modern-payment-vendor-type"
-                        className={cn(
-                          "h-10.5 w-full rounded-mbp-surface! border-mbp-border! px-3 text-mbp-body text-mbp-fg shadow-none! focus-visible:ring-0!",
-                          controlSurfaceClass,
-                        )}
+                        className={addRecipientControlClass}
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -632,10 +661,7 @@ export function ModernBillPaymentDialog() {
                     >
                       <SelectTrigger
                         id="modern-payment-vendor-network"
-                        className={cn(
-                          "h-10.5 w-full rounded-mbp-surface! border-mbp-border! px-3 text-mbp-body text-mbp-fg shadow-none! focus-visible:ring-0!",
-                          controlSurfaceClass,
-                        )}
+                        className={addRecipientControlClass}
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -764,10 +790,7 @@ export function ModernBillPaymentDialog() {
                       >
                         <SelectTrigger
                           id="modern-payment-bank-account-type"
-                          className={cn(
-                            "h-10.5 w-full rounded-mbp-surface! border-mbp-border! px-3 text-mbp-body text-mbp-fg shadow-none! focus-visible:ring-0!",
-                            controlSurfaceClass,
-                          )}
+                          className={addRecipientControlClass}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -791,9 +814,9 @@ export function ModernBillPaymentDialog() {
                   variant="ghost"
                   className={cn(primaryButtonClass)}
                   type="button"
-                  onClick={confirmAddRecipient}
+                  onClick={confirmSaveRecipient}
                 >
-                  Save recipient
+                  {editingRecipientId ? "Save changes" : "Save recipient"}
                 </Button>
               </motion.div>
             ) : (
@@ -859,7 +882,7 @@ function MiniSelect({
   label: string;
   value: string;
   placeholder: string;
-  options: Array<{ value: string; label: string; amount?: string; status?: string }>;
+  options: Array<{ value: string; label: string; amount?: string }>;
   onValueChange: (value: string) => void;
 }) {
   const selected = options.find((item) => item.value === value);
@@ -979,7 +1002,7 @@ function counterpartyTypeLabel(type: CounterpartyType) {
   }
 }
 
-function counterpartyStatusLabel(status: string) {
+function counterpartyStatusLabel(status: Counterparty["status"]) {
   switch (status) {
     case "verified":
       return "Verified";
@@ -989,9 +1012,32 @@ function counterpartyStatusLabel(status: string) {
       return "Missing evidence";
     case "blocked":
       return "Blocked";
-    default:
-      return status;
   }
+}
+
+function CounterpartyStatusIcon({ status }: { status: Counterparty["status"] }) {
+  const label = counterpartyStatusLabel(status);
+  const className = cn(
+    "size-3.5 shrink-0",
+    status === "blocked" ? "text-mbp-danger" : "text-mbp-muted",
+  );
+
+  const icon =
+    status === "verified" ? (
+      <BadgeCheck className={className} aria-hidden />
+    ) : status === "pending_review" ? (
+      <Clock className={className} aria-hidden />
+    ) : status === "missing_evidence" ? (
+      <CircleAlert className={className} aria-hidden />
+    ) : (
+      <Ban className={className} aria-hidden />
+    );
+
+  return (
+    <span className="inline-flex shrink-0" title={label} aria-label={label} role="img">
+      {icon}
+    </span>
+  );
 }
 
 function AddRecipientFormSection({
@@ -1008,30 +1054,16 @@ function AddRecipientFormSection({
   children: ReactNode;
 }) {
   return (
-    <Collapsible
-      open={open}
-      onOpenChange={onOpenChange}
-      className="overflow-hidden rounded-mbp-surface! border border-mbp-border-subtle!"
-    >
-      <CollapsibleTrigger
-        type="button"
-        className={cn(
-          "flex w-full items-center gap-2 bg-mbp-surface px-3 py-2.5 text-left transition-colors duration-mbp hover:bg-mbp-surface-hover",
-        )}
-      >
-        <span className="min-w-0 flex-1 text-mbp-body font-mbp-emphasis leading-tight text-mbp-fg">
-          {title}
-        </span>
+    <Collapsible open={open} onOpenChange={onOpenChange}>
+      <CollapsibleTrigger type="button" className="flex w-full items-center gap-2 text-left">
+        <span className="min-w-0 flex-1">{title}</span>
         {hasError ? <span className="shrink-0 text-mbp-caption text-mbp-danger">Fix errors</span> : null}
         <ChevronDown
-          className={cn(
-            "size-4 shrink-0 text-mbp-muted transition-transform duration-mbp",
-            open && "rotate-180",
-          )}
+          className={cn("size-4 shrink-0 transition-transform duration-200", open && "rotate-180")}
           aria-hidden
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4 border-t border-mbp-border-subtle bg-mbp-surface px-3 pt-3 pb-4">
+      <CollapsibleContent className="space-y-2 pt-2">
         {children}
       </CollapsibleContent>
     </Collapsible>
@@ -1073,7 +1105,7 @@ function AddRecipientField({
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-10.5 rounded-mbp-surface! border-mbp-border! bg-mbp-surface! text-mbp-fg! placeholder:text-mbp-placeholder focus-visible:bg-mbp-surface-hover! focus-visible:ring-0!"
+        className={addRecipientControlClass}
       />
       {error ? <p className="text-mbp-caption text-mbp-danger">{error}</p> : null}
     </div>
@@ -1082,19 +1114,19 @@ function AddRecipientField({
 
 function RecipientManageRow({
   name,
-  detail,
-  title,
+  bankLabel,
   status,
   pending,
+  onEdit,
   onRequestRemove,
   onCancelRemove,
   onConfirmRemove,
 }: {
   name: string;
-  detail: string;
-  title: string;
-  status: string;
+  bankLabel: string | null;
+  status: Counterparty["status"];
   pending: boolean;
+  onEdit: () => void;
   onRequestRemove: () => void;
   onCancelRemove: () => void;
   onConfirmRemove: () => void;
@@ -1128,24 +1160,38 @@ function RecipientManageRow({
   }
 
   return (
-    <div
-      className="flex min-h-9 items-center justify-between gap-2 rounded-mbp-row! bg-mbp-surface! px-3 py-1.5"
-      title={title}
-    >
-      <p className="min-w-0 flex-1 truncate text-mbp-body leading-tight text-mbp-fg">
-        <span className="font-mbp-emphasis">{name}</span>
-        <span className="text-mbp-muted"> · {detail}</span>
-      </p>
-      <span className="shrink-0 text-mbp-caption leading-tight text-mbp-muted">{counterpartyStatusLabel(status)}</span>
-      <Button
-        variant="link"
-        type="button"
-        className={cn(iconButtonClass, "size-6 shrink-0")}
-        onClick={onRequestRemove}
-        aria-label={`Remove ${name}`}
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
+    <div className="rounded-mbp-row! bg-mbp-surface! px-3 py-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          <CounterpartyStatusIcon status={status} />
+          <p className="min-w-0 truncate text-mbp-body font-mbp-emphasis leading-tight text-mbp-fg">
+            {name}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center">
+          <Button
+            variant="link"
+            type="button"
+            className={cn(iconButtonClass, "size-6")}
+            onClick={onEdit}
+            aria-label={`Edit ${name}`}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+          <Button
+            variant="link"
+            type="button"
+            className={cn(iconButtonClass, "size-6")}
+            onClick={onRequestRemove}
+            aria-label={`Remove ${name}`}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+      {bankLabel ? (
+        <p className="truncate text-mbp-caption leading-tight text-mbp-muted">{bankLabel}</p>
+      ) : null}
     </div>
   );
 }

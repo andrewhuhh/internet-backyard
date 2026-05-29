@@ -60,6 +60,16 @@ type StoreState = {
     externalRef: string;
     bankAccount: CounterpartyBankAccount;
   }) => Counterparty;
+  updateCounterparty: (
+    id: string,
+    input: {
+      displayName: string;
+      type: CounterpartyType;
+      network: SettlementNetwork;
+      externalRef: string;
+      bankAccount: CounterpartyBankAccount;
+    },
+  ) => void;
   removeCounterparty: (id: string) => void;
   addRail: (input: {
     label: string;
@@ -154,6 +164,33 @@ export const useSettlementStore = create<StoreState>()(
           lastError: null,
         });
         return counterparty;
+      },
+      updateCounterparty: (id, input) => {
+        const current = get();
+        const isLocal = current.localCounterparties.some((item) => item.id === id);
+        const base = isLocal
+          ? current.localCounterparties.find((item) => item.id === id)
+          : current.seededCounterparties.find((item) => item.id === id);
+
+        if (!base) {
+          return;
+        }
+
+        const counterparty = counterpartySchema.parse({
+          ...base,
+          displayName: input.displayName,
+          type: input.type,
+          network: input.network,
+          externalRef: input.externalRef,
+          bankAccount: input.bankAccount,
+        });
+
+        set({
+          localCounterparties: isLocal
+            ? current.localCounterparties.map((item) => (item.id === id ? counterparty : item))
+            : [...current.localCounterparties, counterparty],
+          lastError: null,
+        });
       },
       removeCounterparty: (id) => {
         const current = get();
@@ -280,9 +317,11 @@ export const useSettlementStore = create<StoreState>()(
 export function selectAvailableCounterparties(state: StoreState) {
   const availability = scenarioAvailability[state.scenarioId];
   const hidden = new Set(state.hiddenCounterpartyIds ?? []);
+  const localIds = new Set(state.localCounterparties.map((item) => item.id));
   return [
     ...state.seededCounterparties.filter(
-      (item) => availability.counterpartyIds.includes(item.id) && !hidden.has(item.id),
+      (item) =>
+        availability.counterpartyIds.includes(item.id) && !hidden.has(item.id) && !localIds.has(item.id),
     ),
     ...state.localCounterparties,
   ];
