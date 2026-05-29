@@ -171,12 +171,6 @@ function ComposePanel() {
           <Select value={state.draft.counterpartyId} onValueChange={(counterpartyId) => state.updateDraft({ counterpartyId })}>
             <SelectTrigger id={id} name={name} className="w-full" aria-label="Recipient">
               <SelectValue placeholder="Select recipient" />
-              {counterparty && (
-                <InlineSelectMeta
-                  icon={<CheckCircle2 className="size-3.5" />}
-                  label={counterparty.status.replaceAll("_", " ")}
-                />
-              )}
             </SelectTrigger>
             <SelectContent>
               {recipients.map((item) => (
@@ -212,12 +206,6 @@ function ComposePanel() {
           <Select value={state.draft.railId} onValueChange={(railId) => state.updateDraft({ railId })}>
             <SelectTrigger id={id} name={name} className="w-full" aria-label="Funding source">
               <SelectValue placeholder="Select funding source" />
-              {rail && (
-                <InlineSelectMeta
-                  icon={<CircleDollarSign className="size-3.5" />}
-                  label={`${cents(rail.availableCents)} available`}
-                />
-              )}
             </SelectTrigger>
             <SelectContent>
               {fundingSources.map((item) => (
@@ -257,12 +245,17 @@ function ComposePanel() {
             <SelectContent>
               {state.usageEvidence.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
-                  {item.workloadName}
+                  <span className="flex w-full items-center justify-between gap-4">
+                    <span>{item.workloadName}</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="size-3" />
+                      {item.confidence}% confidence
+                    </span>
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {selectedUsage && <QuietMeta>{selectedUsage.confidence}% confidence</QuietMeta>}
             </>
           )}
         </Field>
@@ -501,19 +494,6 @@ function Field({
       </Label>
       {typeof children === "function" ? children({ id, name }) : children}
     </div>
-  );
-}
-
-function QuietMeta({ children }: { children: React.ReactNode }) {
-  return <p className="font-mono text-xs text-muted-foreground">{children}</p>;
-}
-
-function InlineSelectMeta({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <span className="ml-auto hidden items-center gap-1.5 rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground sm:inline-flex">
-      {icon}
-      {label}
-    </span>
   );
 }
 
