@@ -1,26 +1,20 @@
 "use client";
 
+import type React from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertCircle,
   ArrowLeft,
-  BadgeCheck,
   Banknote,
   CheckCircle2,
-  Database,
-  FileCheck2,
   Loader2,
   Plus,
-  ReceiptText,
-  ShieldCheck,
-  TerminalSquare,
+  UserRound,
 } from "lucide-react";
-import type React from "react";
-import { useMemo, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +25,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { scenarioPresets } from "@/lib/settlement/seed";
@@ -44,331 +44,262 @@ import {
 } from "@/lib/settlement/store";
 import type { CounterpartyType, RailType } from "@/lib/settlement/schema";
 
-const panelTransition = { type: "spring", stiffness: 520, damping: 42, mass: 0.7 } as const;
+const panelTransition = { type: "spring", stiffness: 520, damping: 44, mass: 0.7 } as const;
 
-export function TransferDialog() {
+export function SendTransferDialog() {
   const [open, setOpen] = useState(false);
   const state = useSettlementStore();
-  const counterparties = selectAvailableCounterparties(state);
-  const rails = selectAvailableRails(state);
-  const { counterparty, rail } = selectResolvedDependencies(state);
-  const usage = state.usageEvidence.find((item) => item.id === state.draft.usageEvidenceId);
-  const quote = state.benchmarkQuotes.find((item) => item.id === state.draft.benchmarkQuoteId);
-  const validation = state.validateDraft();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="h-10 rounded-lg px-4">
           <Banknote className="size-4" />
-          Open settlement dialog
+          Send transfer
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[92vh] overflow-hidden border border-border/80 bg-background p-0 sm:max-w-4xl">
-        <div className="grid min-h-[680px] md:grid-cols-[260px_1fr]">
-          <aside className="border-b border-border bg-card/70 p-5 md:border-r md:border-b-0">
-            <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              <TerminalSquare className="size-4 text-primary" />
-              IBY transfer
-            </div>
-            <div className="mt-8 space-y-4">
-              <DependencyMeter
-                label="Counterparty"
-                ready={Boolean(counterparty)}
-                detail={counterparty?.displayName ?? "Not resolved"}
-              />
-              <DependencyMeter label="Rail" ready={Boolean(rail)} detail={rail?.label ?? "Not resolved"} />
-              <DependencyMeter
-                label="Evidence"
-                ready={Boolean(usage && quote)}
-                detail={usage?.workloadName ?? "No usage evidence"}
-              />
-            </div>
-            <Separator className="my-6" />
-            <Label className="text-xs text-muted-foreground">Scenario</Label>
-            <Select value={state.scenarioId} onValueChange={(value) => state.setScenario(value as typeof state.scenarioId)}>
-              <SelectTrigger className="mt-2 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {scenarioPresets.map((scenario) => (
-                  <SelectItem key={scenario.id} value={scenario.id}>
-                    {scenario.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="mt-6 rounded-lg border border-border bg-background/55 p-3 font-mono text-[11px] leading-5 text-muted-foreground">
-              localStorage: internet-backyard-settlement-demo
-            </div>
-          </aside>
-
-          <section className="relative overflow-hidden p-5">
-            <DialogHeader className="pr-9">
-              <DialogTitle className="text-xl">Settle AI usage</DialogTitle>
-              <DialogDescription>
-                Compose a settlement intent with counterparty, rail, usage evidence, and benchmark context.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-5 h-[560px] overflow-y-auto pr-1">
-              <AnimatePresence mode="popLayout" custom={state.direction}>
-                <motion.div
-                  key={state.step}
-                  custom={state.direction}
-                  initial={{ opacity: 0, x: 32 * state.direction, filter: "blur(3px)" }}
-                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, x: -24 * state.direction, filter: "blur(3px)" }}
-                  transition={panelTransition}
-                >
-                  {state.step === "compose" && (
-                    <ComposePanel
-                      counterparties={counterparties}
-                      rails={rails}
-                      counterpartyReady={Boolean(counterparty)}
-                      railReady={Boolean(rail)}
-                      validationMessage={validation.ok ? null : validation.message}
-                    />
-                  )}
-                  {state.step === "counterparty" && <CounterpartyPanel />}
-                  {state.step === "rail" && <RailPanel />}
-                  {state.step === "review" && <ReviewPanel />}
-                  {state.step === "submitting" && <SubmittingPanel />}
-                  {state.step === "success" && <SuccessPanel close={() => setOpen(false)} />}
-                  {state.step === "failed" && <FailurePanel />}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </section>
+      <DialogContent className="max-h-[92vh] overflow-hidden border border-border bg-background p-0 sm:max-w-xl">
+        <div className="p-5">
+          <DialogHeader className="pr-8">
+            <DialogTitle>{titleForStep(state.step)}</DialogTitle>
+            <DialogDescription>{descriptionForStep(state.step)}</DialogDescription>
+          </DialogHeader>
+        </div>
+        <Separator />
+        <div className="max-h-[70vh] overflow-y-auto p-5">
+          <AnimatePresence mode="popLayout" custom={state.direction}>
+            <motion.div
+              key={state.step}
+              custom={state.direction}
+              initial={{ opacity: 0, x: 24 * state.direction, filter: "blur(2px)" }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, x: -18 * state.direction, filter: "blur(2px)" }}
+              transition={panelTransition}
+            >
+              {state.step === "compose" && <ComposePanel />}
+              {state.step === "counterparty" && <RecipientPanel />}
+              {state.step === "rail" && <FundingSourcePanel />}
+              {state.step === "review" && <ReviewPanel />}
+              {state.step === "submitting" && <SubmittingPanel />}
+              {state.step === "success" && <SuccessPanel close={() => setOpen(false)} />}
+              {state.step === "failed" && <FailurePanel />}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function DependencyMeter({ label, ready, detail }: { label: string; ready: boolean; detail: string }) {
+export function TransferDemoControls() {
+  const state = useSettlementStore();
+  const counterparties = selectAvailableCounterparties(state);
+  const rails = selectAvailableRails(state);
+  const { counterparty, rail } = selectResolvedDependencies(state);
+
   return (
-    <div className="rounded-lg border border-border bg-background/55 p-3">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
-        {ready ? <CheckCircle2 className="size-4 text-primary" /> : <AlertCircle className="size-4 text-amber-300" />}
+    <div className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <Label className="text-xs text-muted-foreground">Demo scenario</Label>
+        <Select value={state.scenarioId} onValueChange={(value) => state.setScenario(value as typeof state.scenarioId)}>
+          <SelectTrigger className="mt-2 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {scenarioPresets.map((scenario) => (
+              <SelectItem key={scenario.id} value={scenario.id}>
+                {scenario.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <p className="mt-2 truncate text-sm">{detail}</p>
+      <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2">
+        <DemoStatus
+          label="Recipient"
+          value={counterparty?.displayName ?? `${counterparties.length} available`}
+          ready={Boolean(counterparty)}
+        />
+        <DemoStatus label="Funding source" value={rail?.label ?? `${rails.length} available`} ready={Boolean(rail)} />
+      </div>
     </div>
   );
 }
 
-function ComposePanel({
-  counterparties,
-  rails,
-  counterpartyReady,
-  railReady,
-  validationMessage,
-}: {
-  counterparties: ReturnType<typeof selectAvailableCounterparties>;
-  rails: ReturnType<typeof selectAvailableRails>;
-  counterpartyReady: boolean;
-  railReady: boolean;
-  validationMessage: string | null;
-}) {
+function ComposePanel() {
   const state = useSettlementStore();
+  const recipients = selectAvailableCounterparties(state);
+  const fundingSources = selectAvailableRails(state);
+  const { counterparty, rail } = selectResolvedDependencies(state);
   const selectedUsage = state.usageEvidence.find((item) => item.id === state.draft.usageEvidenceId);
   const compatibleQuotes = useMemo(
     () => state.benchmarkQuotes.filter((quote) => quote.basis === selectedUsage?.meteringBasis),
     [selectedUsage?.meteringBasis, state.benchmarkQuotes],
   );
+  const validation = state.validateDraft();
+  const missingRecipient = recipients.length === 0 || !counterparty;
+  const missingFunding = fundingSources.length === 0 || !rail;
 
   return (
-    <div className="space-y-4">
-      {(!counterpartyReady || !railReady) && (
+    <div className="space-y-5">
+      {(missingRecipient || missingFunding) && (
         <Alert className="border-amber-300/35 bg-amber-300/10">
           <AlertCircle className="size-4" />
-          <AlertTitle>Dependency resolution required</AlertTitle>
           <AlertDescription>
-            Missing objects can be created inside this dialog. The settlement draft stays intact.
+            {missingRecipient && missingFunding
+              ? "Add a recipient and funding source to continue."
+              : missingRecipient
+                ? "Add a recipient to continue."
+                : "Add a funding source to continue."}
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <FieldShell title="Counterparty" icon={<BadgeCheck className="size-4" />}>
-          {counterparties.length ? (
+      <Field label="Recipient">
+        {recipients.length ? (
+          <div className="grid gap-2">
             <Select value={state.draft.counterpartyId} onValueChange={(counterpartyId) => state.updateDraft({ counterpartyId })}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select counterparty" />
+                <SelectValue placeholder="Select recipient" />
               </SelectTrigger>
               <SelectContent>
-                {counterparties.map((item) => (
+                {recipients.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          ) : (
-            <EmptyDependency label="No counterparties available" onAdd={() => state.setStep("counterparty")} />
-          )}
-          {counterparties.length > 0 && (
-            <Button variant="outline" className="mt-3 w-full" onClick={() => state.setStep("counterparty")}>
-              <Plus className="size-4" />
-              Add counterparty
-            </Button>
-          )}
-        </FieldShell>
+            {counterparty && <QuietMeta>{counterparty.status.replaceAll("_", " ")}</QuietMeta>}
+          </div>
+        ) : (
+          <AddInline icon={<UserRound className="size-4" />} label="Add recipient" onClick={() => state.setStep("counterparty")} />
+        )}
+        {recipients.length > 0 && (
+          <Button variant="ghost" className="mt-2 px-0 text-muted-foreground" onClick={() => state.setStep("counterparty")}>
+            <Plus className="size-4" />
+            New recipient
+          </Button>
+        )}
+      </Field>
 
-        <FieldShell title="Settlement rail" icon={<Banknote className="size-4" />}>
-          {rails.length ? (
+      <Field label="Funding source">
+        {fundingSources.length ? (
+          <div className="grid gap-2">
             <Select value={state.draft.railId} onValueChange={(railId) => state.updateDraft({ railId })}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select rail" />
+                <SelectValue placeholder="Select funding source" />
               </SelectTrigger>
               <SelectContent>
-                {rails.map((item) => (
+                {fundingSources.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
-                    {item.label} - {cents(item.availableCents)}
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          ) : (
-            <EmptyDependency label="No settlement rails available" onAdd={() => state.setStep("rail")} />
-          )}
-          {rails.length > 0 && (
-            <Button variant="outline" className="mt-3 w-full" onClick={() => state.setStep("rail")}>
-              <Plus className="size-4" />
-              Add rail
-            </Button>
-          )}
-        </FieldShell>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <FieldShell title="Usage evidence" icon={<Database className="size-4" />}>
-          <Select value={state.draft.usageEvidenceId} onValueChange={(usageEvidenceId) => state.updateDraft({ usageEvidenceId })}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {state.usageEvidence.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.workloadName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedUsage && (
-            <p className="mt-3 font-mono text-xs text-muted-foreground">
-              {selectedUsage.quantity.toLocaleString()} {selectedUsage.unitLabel} · {selectedUsage.confidence}% confidence
-            </p>
-          )}
-        </FieldShell>
-        <FieldShell title="Benchmark quote" icon={<FileCheck2 className="size-4" />}>
-          <Select value={state.draft.benchmarkQuoteId} onValueChange={(benchmarkQuoteId) => state.updateDraft({ benchmarkQuoteId })}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {compatibleQuotes.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="mt-3 font-mono text-xs text-muted-foreground">Matched to current usage basis.</p>
-        </FieldShell>
-      </div>
-
-      <FieldShell title="Settlement terms" icon={<ReceiptText className="size-4" />}>
-        <div className="grid gap-3 md:grid-cols-[1fr_150px]">
-          <div>
-            <Label>Amount</Label>
-            <Input
-              className="mt-2"
-              inputMode="decimal"
-              value={(state.draft.amountCents / 100).toString()}
-              onChange={(event) => state.updateDraft({ amountCents: Math.round(Number(event.target.value || 0) * 100) })}
-            />
+            {rail && <QuietMeta>{cents(rail.availableCents)} available</QuietMeta>}
           </div>
-          <div>
-            <Label>Review mode</Label>
-            <Select value={state.draft.reviewMode} onValueChange={(reviewMode) => state.updateDraft({ reviewMode: reviewMode as typeof state.draft.reviewMode })}>
-              <SelectTrigger className="mt-2 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="expedited">Expedited</SelectItem>
-                <SelectItem value="manual_review">Manual review</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="mt-3">
-          <Label>Memo</Label>
-          <Textarea
-            className="mt-2 min-h-20"
-            value={state.draft.memo}
-            onChange={(event) => state.updateDraft({ memo: event.target.value })}
+        ) : (
+          <AddInline icon={<Banknote className="size-4" />} label="Add funding source" onClick={() => state.setStep("rail")} />
+        )}
+        {fundingSources.length > 0 && (
+          <Button variant="ghost" className="mt-2 px-0 text-muted-foreground" onClick={() => state.setStep("rail")}>
+            <Plus className="size-4" />
+            New funding source
+          </Button>
+        )}
+      </Field>
+
+      <Field label="Usage evidence">
+        <Select value={state.draft.usageEvidenceId} onValueChange={(usageEvidenceId) => state.updateDraft({ usageEvidenceId })}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {state.usageEvidence.map((item) => (
+              <SelectItem key={item.id} value={item.id}>
+                {item.workloadName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedUsage && (
+          <QuietMeta>
+            {selectedUsage.confidence}% confidence · {selectedUsage.evidenceHash}
+          </QuietMeta>
+        )}
+      </Field>
+
+      <Field label="Benchmark">
+        <Select value={state.draft.benchmarkQuoteId} onValueChange={(benchmarkQuoteId) => state.updateDraft({ benchmarkQuoteId })}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {compatibleQuotes.map((item) => (
+              <SelectItem key={item.id} value={item.id}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      <div className="grid gap-4 sm:grid-cols-[1fr_90px]">
+        <Field label="Amount">
+          <Input
+            inputMode="decimal"
+            value={(state.draft.amountCents / 100).toString()}
+            onChange={(event) => state.updateDraft({ amountCents: Math.round(Number(event.target.value || 0) * 100) })}
           />
-        </div>
-      </FieldShell>
+        </Field>
+        <Field label="Currency">
+          <Input value={state.draft.currency} onChange={(event) => state.updateDraft({ currency: event.target.value.toUpperCase() })} />
+        </Field>
+      </div>
 
-      {validationMessage && <p className="font-mono text-xs text-destructive">{validationMessage}</p>}
-      <div className="flex justify-end">
+      <Field label="Reference">
+        <Textarea
+          className="min-h-18 resize-none"
+          value={state.draft.memo}
+          onChange={(event) => state.updateDraft({ memo: event.target.value })}
+        />
+      </Field>
+
+      {!validation.ok && <p className="text-sm text-destructive">{validation.message}</p>}
+
+      <div className="flex justify-end gap-2 pt-1">
+        <Button variant="outline" onClick={() => state.updateDraft({ memo: state.draft.memo })}>
+          Cancel
+        </Button>
         <Button
-          disabled={!counterpartyReady || !railReady}
+          disabled={missingRecipient || missingFunding}
           onClick={() => {
             const result = state.validateDraft();
             if (result.ok) state.setStep("review");
           }}
         >
-          Verify settlement
+          Review transfer
         </Button>
       </div>
     </div>
   );
 }
 
-function FieldShell({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <Card className="rounded-lg border border-border bg-card/80 py-0">
-      <CardContent className="p-4">
-        <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-          <span className="text-primary">{icon}</span>
-          {title}
-        </div>
-        {children}
-      </CardContent>
-    </Card>
-  );
-}
-
-function EmptyDependency({ label, onAdd }: { label: string; onAdd: () => void }) {
-  return (
-    <button
-      className="flex h-24 w-full flex-col items-center justify-center rounded-lg border border-dashed border-amber-300/40 bg-amber-300/10 text-sm text-amber-100"
-      onClick={onAdd}
-      type="button"
-    >
-      <Plus className="mb-2 size-4" />
-      {label}
-    </button>
-  );
-}
-
-function CounterpartyPanel() {
+function RecipientPanel() {
   const state = useSettlementStore();
   const [displayName, setDisplayName] = useState("");
   const [type, setType] = useState<CounterpartyType>("model_provider");
   const [network, setNetwork] = useState("IBY onboarding desk");
-  const [externalRef, setExternalRef] = useState("draft:counterparty");
+  const [externalRef, setExternalRef] = useState("draft:recipient");
 
   return (
-    <DetourShell title="Add counterparty" description="Create a recipient-side object without leaving settlement composition.">
-      <div className="grid gap-3">
-        <Label>Name</Label>
-        <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="e.g. Meridian Agents" />
-        <Label>Type</Label>
+    <DetourShell>
+      <Field label="Name">
+        <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Recipient name" />
+      </Field>
+      <Field label="Type">
         <Select value={type} onValueChange={(value) => setType(value as CounterpartyType)}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -380,19 +311,21 @@ function CounterpartyPanel() {
             <SelectItem value="compute_market">Compute market</SelectItem>
           </SelectContent>
         </Select>
-        <Label>Network</Label>
+      </Field>
+      <Field label="Network">
         <Input value={network} onChange={(event) => setNetwork(event.target.value)} />
-        <Label>External reference</Label>
+      </Field>
+      <Field label="Reference">
         <Input value={externalRef} onChange={(event) => setExternalRef(event.target.value)} />
-      </div>
-      <Button className="mt-5 w-full" disabled={displayName.length < 2} onClick={() => state.addCounterparty({ displayName, type, network, externalRef })}>
-        Add and return to settlement
+      </Field>
+      <Button className="w-full" disabled={displayName.length < 2} onClick={() => state.addCounterparty({ displayName, type, network, externalRef })}>
+        Add recipient
       </Button>
     </DetourShell>
   );
 }
 
-function RailPanel() {
+function FundingSourcePanel() {
   const state = useSettlementStore();
   const [label, setLabel] = useState("");
   const [type, setType] = useState<RailType>("operating_balance");
@@ -400,11 +333,11 @@ function RailPanel() {
   const [available, setAvailable] = useState("50000");
 
   return (
-    <DetourShell title="Add settlement rail" description="Create a funding path for this usage settlement.">
-      <div className="grid gap-3">
-        <Label>Label</Label>
-        <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Compute ops balance" />
-        <Label>Rail type</Label>
+    <DetourShell>
+      <Field label="Name">
+        <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Funding source name" />
+      </Field>
+      <Field label="Type">
         <Select value={type} onValueChange={(value) => setType(value as RailType)}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -417,41 +350,23 @@ function RailPanel() {
             <SelectItem value="invoice_agreement">Invoice agreement</SelectItem>
           </SelectContent>
         </Select>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <Label>Currency</Label>
-            <Input className="mt-2" value={currency} onChange={(event) => setCurrency(event.target.value)} />
-          </div>
-          <div>
-            <Label>Available</Label>
-            <Input className="mt-2" value={available} onChange={(event) => setAvailable(event.target.value)} />
-          </div>
-        </div>
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Currency">
+          <Input value={currency} onChange={(event) => setCurrency(event.target.value)} />
+        </Field>
+        <Field label="Available">
+          <Input value={available} onChange={(event) => setAvailable(event.target.value)} />
+        </Field>
       </div>
       <Button
-        className="mt-5 w-full"
+        className="w-full"
         disabled={label.length < 2}
         onClick={() => state.addRail({ label, type, currency, availableCents: Math.round(Number(available || 0) * 100) })}
       >
-        Add and return to settlement
+        Add funding source
       </Button>
     </DetourShell>
-  );
-}
-
-function DetourShell({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
-  const state = useSettlementStore();
-  return (
-    <div className="mx-auto max-w-xl">
-      <Button variant="ghost" className="mb-4" onClick={() => state.setStep("compose", -1)}>
-        <ArrowLeft className="size-4" />
-        Back to draft
-      </Button>
-      <FieldShell title={title} icon={<Plus className="size-4" />}>
-        <p className="mb-5 text-sm text-muted-foreground">{description}</p>
-        {children}
-      </FieldShell>
-    </div>
   );
 }
 
@@ -459,80 +374,177 @@ function ReviewPanel() {
   const state = useSettlementStore();
   const { counterparty, rail } = selectResolvedDependencies(state);
   const usage = state.usageEvidence.find((item) => item.id === state.draft.usageEvidenceId);
-  const quote = state.benchmarkQuotes.find((item) => item.id === state.draft.benchmarkQuoteId);
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" onClick={() => state.setStep("compose", -1)}>
-        <ArrowLeft className="size-4" />
-        Back to edit
-      </Button>
-      <FieldShell title="Settlement verification" icon={<ShieldCheck className="size-4" />}>
-        <div className="grid gap-3 text-sm">
-          <ReviewRow label="Counterparty" value={counterparty?.displayName ?? "Missing"} badge={counterparty?.status} />
-          <ReviewRow label="Rail" value={`${rail?.label ?? "Missing"} · ${rail ? cents(rail.availableCents) : ""}`} badge={rail?.status} />
-          <ReviewRow label="Usage" value={usage?.workloadName ?? "Missing"} badge={`${usage?.confidence ?? 0}% confidence`} />
-          <ReviewRow label="Benchmark" value={quote?.label ?? "Missing"} badge={`${quote?.confidence ?? 0}% quote`} />
-          <ReviewRow label="Amount" value={cents(state.draft.amountCents)} badge={state.draft.reviewMode} />
-        </div>
-      </FieldShell>
-      <Button className="w-full" onClick={() => void state.submit()}>
-        Submit settlement intent
-      </Button>
-    </div>
-  );
-}
-
-function ReviewRow({ label, value, badge }: { label: string; value: string; badge?: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-background/45 p-3">
-      <div>
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-        <div className="mt-1">{value}</div>
+      <ReviewRow label="Recipient" value={counterparty?.displayName ?? "Missing"} />
+      <ReviewRow label="Funding source" value={rail?.label ?? "Missing"} />
+      <ReviewRow label="Usage" value={usage?.workloadName ?? "Missing"} />
+      <ReviewRow label="Amount" value={cents(state.draft.amountCents)} badge={state.draft.currency} />
+      <ReviewRow label="Reference" value={state.draft.memo} />
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" onClick={() => state.setStep("compose", -1)}>
+          Back
+        </Button>
+        <Button onClick={() => void state.submit()}>Submit transfer</Button>
       </div>
-      {badge && <Badge variant="secondary">{badge.replaceAll("_", " ")}</Badge>}
     </div>
   );
 }
 
 function SubmittingPanel() {
   return (
-    <div className="flex h-[420px] flex-col items-center justify-center text-center">
-      <Loader2 className="mb-5 size-10 animate-spin text-primary" />
-      <h3 className="text-2xl font-semibold">Writing settlement intent</h3>
-      <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-        Validating dependencies, benchmark context, rail limits, and audit memo.
-      </p>
-    </div>
+    <StatePanel icon={<Loader2 className="size-9 animate-spin text-primary" />} title="Submitting transfer" />
   );
 }
 
 function SuccessPanel({ close }: { close: () => void }) {
   const receipt = useSettlementStore((state) => state.receipts[0]);
   return (
-    <div className="flex h-[440px] flex-col items-center justify-center text-center">
-      <CheckCircle2 className="mb-5 size-12 text-primary" />
-      <h3 className="text-2xl font-semibold">Settlement recorded</h3>
-      <p className="mt-3 font-mono text-sm text-muted-foreground">{receipt?.auditRef}</p>
-      <Button className="mt-8" onClick={close}>
-        Close dialog
-      </Button>
-    </div>
+    <StatePanel
+      icon={<CheckCircle2 className="size-10 text-primary" />}
+      title="Transfer recorded"
+      body={receipt?.auditRef}
+      action={<Button onClick={close}>Done</Button>}
+    />
   );
 }
 
 function FailurePanel() {
   const state = useSettlementStore();
   return (
-    <div className="flex h-[440px] flex-col items-center justify-center text-center">
-      <AlertCircle className="mb-5 size-12 text-destructive" />
-      <h3 className="text-2xl font-semibold">Settlement needs attention</h3>
-      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        {state.lastError ?? "The settlement failed validation."}
-      </p>
-      <Button className="mt-8" variant="outline" onClick={state.resetFailure}>
-        Return to draft
+    <StatePanel
+      icon={<AlertCircle className="size-10 text-destructive" />}
+      title="Transfer failed"
+      body={state.lastError ?? "The transfer could not be submitted."}
+      action={
+        <Button variant="outline" onClick={state.resetFailure}>
+          Back to edit
+        </Button>
+      }
+    />
+  );
+}
+
+function DetourShell({ children }: { children: React.ReactNode }) {
+  const state = useSettlementStore();
+  return (
+    <div className="space-y-5">
+      <Button variant="ghost" className="px-0 text-muted-foreground" onClick={() => state.setStep("compose", -1)}>
+        <ArrowLeft className="size-4" />
+        Back
       </Button>
+      {children}
     </div>
   );
 }
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <Label className="mb-2 block text-sm text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function QuietMeta({ children }: { children: React.ReactNode }) {
+  return <p className="font-mono text-xs text-muted-foreground">{children}</p>;
+}
+
+function AddInline({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-amber-300/45 bg-amber-300/10 text-sm text-amber-100 transition hover:bg-amber-300/15"
+      onClick={onClick}
+      type="button"
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function ReviewRow({ label, value, badge }: { label: string; value: string; badge?: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-border pb-3 last:border-b-0">
+      <div>
+        <div className="text-sm text-muted-foreground">{label}</div>
+        <div className="mt-1 text-sm leading-6">{value}</div>
+      </div>
+      {badge && <Badge variant="secondary">{badge}</Badge>}
+    </div>
+  );
+}
+
+function StatePanel({
+  icon,
+  title,
+  body,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-80 flex-col items-center justify-center text-center">
+      {icon}
+      <h3 className="mt-5 text-xl font-semibold">{title}</h3>
+      {body && <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{body}</p>}
+      {action && <div className="mt-6">{action}</div>}
+    </div>
+  );
+}
+
+function DemoStatus({ label, value, ready }: { label: string; value: string; ready: boolean }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {ready ? <CheckCircle2 className="size-4 text-primary" /> : <AlertCircle className="size-4 text-amber-300" />}
+        {label}
+      </div>
+      <p className="mt-1 truncate text-sm">{value}</p>
+    </div>
+  );
+}
+
+function titleForStep(step: ReturnType<typeof useSettlementStore.getState>["step"]) {
+  switch (step) {
+    case "counterparty":
+      return "Add recipient";
+    case "rail":
+      return "Add funding source";
+    case "review":
+      return "Review transfer";
+    case "submitting":
+      return "Submitting";
+    case "success":
+      return "Complete";
+    case "failed":
+      return "Needs attention";
+    default:
+      return "Send transfer";
+  }
+}
+
+function descriptionForStep(step: ReturnType<typeof useSettlementStore.getState>["step"]) {
+  switch (step) {
+    case "counterparty":
+      return "Create the recipient and return to the transfer.";
+    case "rail":
+      return "Create the funding source and return to the transfer.";
+    case "review":
+      return "Confirm the details before submission.";
+    case "submitting":
+      return "Validating and recording the transfer.";
+    case "success":
+    case "failed":
+      return "";
+    default:
+      return "Choose the recipient, funding source, usage, and amount.";
+  }
+}
+
+export { SendTransferDialog as TransferDialog };
