@@ -36,6 +36,7 @@ export default function ComponentsPage() {
               <Button>Primary</Button>
               <Button variant="outline">Outline</Button>
               <Button variant="ghost">Ghost</Button>
+              <Button variant="link">Link</Button>
               <Button variant="destructive">Destructive</Button>
               <Button size="icon">
                 <Plus className="size-4" />
