@@ -47,10 +47,10 @@ export function ModernBillPaymentDialog() {
   const canContinue = Boolean(counterparty && rail && !isEmpty && !exceeds);
   const amountTextSize = useMemo(() => {
     return sizeByCharacterCount(Math.max(1, Math.floor(amount / 100).toString().length), {
-      base: "text-[2.7rem]",
-      medium: "text-[2.35rem]",
-      small: "text-[2rem]",
-      smallest: "text-[1.7rem]",
+      base: "modern-payment-amount-lg",
+      medium: "modern-payment-amount-md",
+      small: "modern-payment-amount-sm",
+      smallest: "modern-payment-amount-xs",
     });
   }, [amount]);
   const amountDisplay = amount > 0 ? (amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0";
@@ -73,21 +73,21 @@ export function ModernBillPaymentDialog() {
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className="modern-payment-dialog w-(--mp-dialog-width) overflow-hidden rounded-(--mp-radius) border border-white/8 bg-(--mp-surface) p-0 text-(--mp-text) shadow-2xl sm:max-w-none"
+        className="modern-payment-dialog p-0 shadow-2xl sm:max-w-none"
       >
         <DialogTitle className="sr-only">{step === "confirm" ? "Confirmation" : "Bill payment"}</DialogTitle>
-        <div className="flex h-12 items-center justify-between px-4 pt-2 text-(--mp-muted)">
+        <div className="modern-payment-header">
           <button
-            className="grid size-7 place-items-center rounded-full text-(--mp-muted) transition hover:text-white"
+            className="modern-payment-icon-button"
             onClick={() => (step === "confirm" ? setStep("amount") : setOpen(false))}
             type="button"
             aria-label={step === "confirm" ? "Back to amount" : "Close bill payment"}
           >
             <ArrowLeft className="size-4" />
           </button>
-          <div className="text-(length:--mp-title-size)">{step === "confirm" ? "Confirmation" : "Bill payment"}</div>
+          <div className="modern-payment-title">{step === "confirm" ? "Confirmation" : "Bill payment"}</div>
           <button
-            className="grid size-7 place-items-center rounded-full text-[#d7d7d7] transition hover:text-white"
+            className="modern-payment-icon-button"
             onClick={() => setOpen(false)}
             type="button"
             aria-label="Close"
@@ -96,7 +96,7 @@ export function ModernBillPaymentDialog() {
           </button>
         </div>
 
-        <div className="px-4 pb-4 pt-2">
+        <div className="modern-payment-body">
           <AnimatePresence mode="popLayout">
             {step === "amount" ? (
               <motion.div
@@ -106,7 +106,7 @@ export function ModernBillPaymentDialog() {
                 exit={{ opacity: 0, x: -14, filter: "blur(2px)" }}
                 transition={motionTransition}
               >
-                <div className="grid grid-cols-2 gap-3">
+                <div className="modern-payment-grid">
                   <MiniSelect
                     label="From"
                     value={state.draft.railId}
@@ -132,17 +132,17 @@ export function ModernBillPaymentDialog() {
                   />
                 </div>
 
-                <div className="py-9 text-center">
+                <div className="modern-payment-amount-section">
                   <label className="sr-only" htmlFor="modern-payment-amount">
                     Amount
                   </label>
-                  <div className={cn("mx-auto flex max-w-full items-baseline justify-center font-semibold tracking-tight", amountTextSize)}>
-                    <span className={cn(isEmpty && "text-[#7f7f7f]")}>$</span>
+                  <div className={cn("modern-payment-amount-row", amountTextSize)}>
+                    <span className={cn(isEmpty && "modern-payment-empty")}>$</span>
                     <input
                       id="modern-payment-amount"
                       name="modern-payment-amount"
                       aria-label="Payment amount"
-                      className={cn("min-w-[1ch] max-w-[9ch] bg-transparent text-center font-semibold tracking-tight outline-none", isEmpty && "text-[#7f7f7f]")}
+                      className={cn("modern-payment-amount-input", isEmpty && "modern-payment-empty")}
                       inputMode="decimal"
                       style={{ width: amountInputWidth }}
                       value={amountDisplay}
@@ -151,18 +151,18 @@ export function ModernBillPaymentDialog() {
                         state.updateDraft({ amountCents: Number.isFinite(numeric) ? Math.round(numeric * 100) : 0 });
                       }}
                     />
-                    <span className="text-[0.34em] font-semibold text-white">USD</span>
+                    <span className="modern-payment-currency">USD</span>
                   </div>
                   {exceeds ? (
                     <p className="modern-payment-meta mt-3 text-(--mp-danger)">Cannot exceed {cents(available)}</p>
                   ) : (
                     <p className="modern-payment-meta mt-3">{cents(available)} available</p>
                   )}
-                  <div className="mt-4 flex items-center justify-center gap-2 text-(length:--mp-meta-size)">
+                  <div className="modern-payment-time-toggle mt-4">
                     <button
                       className={cn(
-                        "rounded-full px-2.5 py-1 font-semibold transition",
-                        time === "instant" ? "bg-[#666] text-white" : "text-(--mp-muted) hover:text-white",
+                        "modern-payment-pill",
+                        time === "instant" && "modern-payment-pill-active",
                       )}
                       onClick={() => setTime("instant")}
                       type="button"
@@ -171,8 +171,8 @@ export function ModernBillPaymentDialog() {
                     </button>
                     <button
                       className={cn(
-                        "rounded-full px-2.5 py-1 font-semibold transition",
-                        time === "schedule" ? "bg-[#666] text-white" : "text-(--mp-muted) hover:text-white",
+                        "modern-payment-pill",
+                        time === "schedule" && "modern-payment-pill-active",
                       )}
                       onClick={() => setTime("schedule")}
                       type="button"
@@ -183,7 +183,7 @@ export function ModernBillPaymentDialog() {
                   {time === "schedule" && (
                     <input
                       aria-label="Scheduled payment date"
-                      className="modern-payment-meta mx-auto mt-3 h-9 rounded-lg border border-white/10 bg-(--mp-control) px-3 text-white outline-none [color-scheme:dark]"
+                      className="modern-payment-date modern-payment-meta mx-auto mt-3"
                       name="modern-payment-scheduled-date"
                       onChange={(event) => setScheduledDate(event.target.value)}
                       type="date"
@@ -196,8 +196,8 @@ export function ModernBillPaymentDialog() {
                   className={cn(
                     "modern-payment-button w-full transition",
                     canContinue
-                      ? "bg-white text-black hover:bg-[#e8e8e8]"
-                      : "bg-[#292929] text-[#5e5e5e]",
+                      ? "modern-payment-primary"
+                      : "modern-payment-disabled",
                   )}
                   disabled={!canContinue}
                   onClick={() => setStep("confirm")}
@@ -214,10 +214,10 @@ export function ModernBillPaymentDialog() {
                 exit={{ opacity: 0, x: 18, filter: "blur(2px)" }}
                 transition={motionTransition}
               >
-                <div className="pb-5 pt-4 text-center">
-                  <div className="text-3xl font-semibold tracking-tight">
+                <div className="modern-payment-confirm-head">
+                  <div className="modern-payment-confirm-amount">
                     {cents(amount)}
-                    <span className="ml-1 text-xs">USD</span>
+                    <span className="modern-payment-confirm-currency">USD</span>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -229,7 +229,7 @@ export function ModernBillPaymentDialog() {
                   + Add a private note
                 </button>
                 <button
-                  className="modern-payment-button mt-5 w-full bg-white text-black transition hover:bg-[#e8e8e8]"
+                  className="modern-payment-button modern-payment-primary mt-5 w-full transition"
                   onClick={() => {
                     void state.submit();
                     setOpen(false);
@@ -265,28 +265,28 @@ function MiniSelect({
   const selected = options.find((item) => item.value === value);
   const displayLabel = selected?.label ?? placeholder;
   const labelSize = sizeByCharacterCount(displayLabel.length, {
-    base: "text-[0.96rem]",
-    medium: "text-[0.88rem]",
-    small: "text-[0.8rem]",
-    smallest: "text-[0.74rem]",
+    base: "text-(length:--mp-text-lg)",
+    medium: "text-(length:--mp-text-md)",
+    small: "text-(length:--mp-text-sm)",
+    smallest: "text-(length:--mp-text-xs)",
   });
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="modern-payment-select-trigger w-full">
         <span className="min-w-0">
           <span className="modern-payment-label block">{label}</span>
-          <span className={cn("modern-payment-value mt-1 flex items-center gap-1", labelSize)}>
-            <span className="max-w-[12ch] truncate">
+          <span className={cn("modern-payment-value modern-payment-select-value-row", labelSize)}>
+            <span className="modern-payment-select-value-text">
               <SelectValue placeholder={placeholder}>{displayLabel}</SelectValue>
             </span>
-            {verified && selected && <CheckCircle2 className="size-3.5 shrink-0 text-[#a6a6a6]" />}
+            {verified && selected && <CheckCircle2 className="modern-payment-inline-icon shrink-0" />}
           </span>
         </span>
       </SelectTrigger>
-      <SelectContent align="start" className="border-white/10 bg-[#242424] text-white">
+      <SelectContent align="start" className="modern-payment-popover">
         {options.map((item) => (
           <SelectItem key={item.value} value={item.value}>
-            <span className="flex w-full items-center justify-between gap-4">
+            <span className="modern-payment-option-row">
               <span>{item.label}</span>
               {item.meta && <span className="modern-payment-meta">{item.meta}</span>}
             </span>
@@ -311,9 +311,9 @@ function ConfirmRow({ label, value, verified = false }: { label: string; value: 
   return (
     <div className="modern-payment-row flex items-center justify-between">
       <span className="modern-payment-meta">{label}</span>
-      <span className="modern-payment-value flex items-center gap-1 truncate">
+      <span className="modern-payment-value modern-payment-select-value-row truncate">
         {value}
-        {verified && <CheckCircle2 className="size-3.5 text-[#a6a6a6]" />}
+        {verified && <CheckCircle2 className="modern-payment-inline-icon" />}
       </span>
     </div>
   );

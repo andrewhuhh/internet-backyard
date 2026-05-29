@@ -140,27 +140,47 @@ a {
 
 @layer components {
   .modern-payment-dialog {
-    --mp-dialog-width: 22.5rem;
-    --mp-surface: #1c1c1c;
-    --mp-control: #262626;
-    --mp-control-hover: #2b2b2b;
-    --mp-text: #ffffff;
-    --mp-muted: #9a9a9a;
-    --mp-danger: #ff4040;
+    --mp-width: 22.5rem;
+    --mp-bg: oklch(0.22 0 0);
+    --mp-control: oklch(0.28 0 0);
+    --mp-control-hover: oklch(0.32 0 0);
+    --mp-popover: oklch(0.25 0 0);
+    --mp-text: oklch(0.98 0 0);
+    --mp-muted: oklch(0.68 0 0);
+    --mp-subtle: oklch(0.52 0 0);
+    --mp-danger: oklch(0.64 0.22 25);
+    --mp-inverse: oklch(0.12 0 0);
+    --mp-action: oklch(0.98 0 0);
+    --mp-action-hover: oklch(0.9 0 0);
+    --mp-disabled: oklch(0.3 0 0);
+    --mp-disabled-text: oklch(0.48 0 0);
+    --mp-border: oklch(1 0 0 / 0.08);
+    --mp-border-strong: oklch(1 0 0 / 0.12);
+    --mp-text-xs: 0.75rem;
+    --mp-text-sm: 0.8125rem;
+    --mp-text-md: 0.9375rem;
+    --mp-text-lg: 1rem;
+    --mp-text-xl: 1.125rem;
+    --mp-amount-lg: 2.7rem;
+    --mp-amount-md: 2.35rem;
+    --mp-amount-sm: 2rem;
+    --mp-amount-xs: 1.7rem;
     --mp-radius: 1.125rem;
-    --mp-control-radius: 0.75rem;
-    --mp-title-size: 0.875rem;
-    --mp-label-size: 0.8125rem;
-    --mp-body-size: 0.9375rem;
-    --mp-meta-size: 0.8125rem;
-    --mp-button-size: 0.9375rem;
+    --mp-radius-sm: 0.75rem;
+    --mp-control-h: 3.25rem;
+    width: var(--mp-width);
+    overflow: hidden;
+    border: 1px solid var(--mp-border);
+    border-radius: var(--mp-radius);
+    background: var(--mp-bg);
+    color: var(--mp-text);
   }
 
   .modern-payment-select-trigger {
-    min-height: 3.25rem;
+    min-height: var(--mp-control-h);
     align-items: center;
     border: 0 !important;
-    border-radius: var(--mp-control-radius);
+    border-radius: var(--mp-radius-sm);
     background: var(--mp-control);
     padding: 0.625rem 0.75rem;
     text-align: left;
@@ -173,27 +193,27 @@ a {
 
   .modern-payment-label {
     color: var(--mp-muted);
-    font-size: var(--mp-label-size);
+    font-size: var(--mp-text-sm);
     line-height: 1;
   }
 
   .modern-payment-value {
     color: var(--mp-text);
-    font-size: var(--mp-body-size);
+    font-size: var(--mp-text-md);
     font-weight: 650;
     line-height: 1.15;
   }
 
   .modern-payment-meta {
     color: var(--mp-muted);
-    font-size: var(--mp-meta-size);
+    font-size: var(--mp-text-sm);
     line-height: 1.25;
   }
 
   .modern-payment-button {
     height: 2.625rem;
-    border-radius: 0.75rem;
-    font-size: var(--mp-button-size);
+    border-radius: var(--mp-radius-sm);
+    font-size: var(--mp-text-md);
     font-weight: 650;
   }
 
@@ -202,5 +222,193 @@ a {
     border-radius: 0.625rem;
     background: var(--mp-control);
     padding: 0 0.875rem;
+  }
+
+  .modern-payment-header {
+    display: flex;
+    height: 3rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem 0;
+    color: var(--mp-muted);
+  }
+
+  .modern-payment-title {
+    font-size: var(--mp-text-sm);
+  }
+
+  .modern-payment-icon-button {
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--mp-muted);
+    transition: color 120ms ease;
+  }
+
+  .modern-payment-icon-button:hover {
+    color: var(--mp-text);
+  }
+
+  .modern-payment-body {
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  .modern-payment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .modern-payment-amount-section {
+    padding: 2.25rem 0;
+    text-align: center;
+  }
+
+  .modern-payment-amount-row {
+    display: flex;
+    max-width: 100%;
+    align-items: baseline;
+    justify-content: center;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  .modern-payment-amount-lg {
+    font-size: var(--mp-amount-lg);
+  }
+
+  .modern-payment-amount-md {
+    font-size: var(--mp-amount-md);
+  }
+
+  .modern-payment-amount-sm {
+    font-size: var(--mp-amount-sm);
+  }
+
+  .modern-payment-amount-xs {
+    font-size: var(--mp-amount-xs);
+  }
+
+  .modern-payment-empty {
+    color: var(--mp-subtle);
+  }
+
+  .modern-payment-amount-input {
+    min-width: 1ch;
+    max-width: 9ch;
+    background: transparent;
+    text-align: center;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    outline: none;
+  }
+
+  .modern-payment-currency {
+    color: var(--mp-text);
+    font-size: 0.34em;
+    font-weight: 650;
+  }
+
+  .modern-payment-time-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: var(--mp-text-sm);
+  }
+
+  .modern-payment-pill {
+    border-radius: 999px;
+    padding: 0.25rem 0.625rem;
+    color: var(--mp-muted);
+    font-weight: 650;
+    transition: color 120ms ease, background-color 120ms ease;
+  }
+
+  .modern-payment-pill:hover {
+    color: var(--mp-text);
+  }
+
+  .modern-payment-pill-active {
+    background: var(--mp-control-hover);
+    color: var(--mp-text);
+  }
+
+  .modern-payment-date {
+    height: 2.25rem;
+    border: 1px solid var(--mp-border-strong);
+    border-radius: 0.625rem;
+    background: var(--mp-control);
+    color: var(--mp-text);
+    padding: 0 0.75rem;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  .modern-payment-primary {
+    background: var(--mp-action);
+    color: var(--mp-inverse);
+  }
+
+  .modern-payment-primary:hover {
+    background: var(--mp-action-hover);
+  }
+
+  .modern-payment-disabled {
+    background: var(--mp-disabled);
+    color: var(--mp-disabled-text);
+  }
+
+  .modern-payment-confirm-amount {
+    color: var(--mp-text);
+    font-size: var(--mp-amount-sm);
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  .modern-payment-popover {
+    border-color: var(--mp-border-strong);
+    background: var(--mp-popover);
+    color: var(--mp-text);
+  }
+
+  .modern-payment-inline-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--mp-muted);
+  }
+
+  .modern-payment-select-value-row {
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .modern-payment-select-value-text {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .modern-payment-option-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .modern-payment-confirm-head {
+    padding: 1rem 0 1.25rem;
+    text-align: center;
+  }
+
+  .modern-payment-confirm-currency {
+    margin-left: 0.25rem;
+    font-size: var(--mp-text-xs);
   }
 }
